@@ -158,9 +158,9 @@ document.getElementById('search-btn').addEventListener('click', async () => {
         if (querySnapshot.empty) {
             searchResults.innerHTML = '<div style="text-align:center; color:#a8a8a8; margin-top:20px;">ไม่พบผู้ใช้งานชื่อนี้ครับ</div>';
         } else {
-            querySnapshot.forEach((doc) => {
-                const userData = doc.data();
-                const friendUid = doc.id;
+            querySnapshot.forEach((docSnap) => {
+                const userData = docSnap.data();
+                const friendUid = docSnap.id;
                 
                 // เช็กว่าไม่ใช่ชื่อตัวเอง
                 if(friendUid === currentUserUid) return;
@@ -171,6 +171,7 @@ document.getElementById('search-btn').addEventListener('click', async () => {
                 userCard.style.alignItems = 'center';
                 userCard.style.justifyContent = 'space-between';
 
+                // ใส่แค่รูปกับชื่อก่อน ส่วนปุ่มเราจะสร้างแยกเพื่อใส่คำสั่งคลิก
                 userCard.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <img src="${userData.profilePic || 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Black%20Cat.png'}" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1px solid #262626;">
@@ -179,8 +180,50 @@ document.getElementById('search-btn').addEventListener('click', async () => {
                             <span style="color: #a8a8a8; font-size: 0.8rem;">${userData.bio || 'ยังไม่มีสถานะ'}</span>
                         </div>
                     </div>
-                    <button style="background: #0095f6; color: white; border: none; padding: 6px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.85rem; transition: background 0.2s;" onmouseover="this.style.background='#1877f2'" onmouseout="this.style.background='#0095f6'">เพิ่มเพื่อน</button>
                 `;
+
+                // สร้างปุ่ม "เพิ่มเพื่อน" แยกออกมา
+                const addBtn = document.createElement('button');
+                addBtn.textContent = 'เพิ่มเพื่อน';
+                addBtn.style.cssText = "background: #0095f6; color: white; border: none; padding: 6px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.85rem; transition: background 0.2s;";
+                
+                // เอฟเฟกต์ตอนเอาเมาส์ชี้
+                addBtn.onmouseover = () => { if(!addBtn.disabled) addBtn.style.background = '#1877f2'; };
+                addBtn.onmouseout = () => { if(!addBtn.disabled) addBtn.style.background = '#0095f6'; };
+
+                // ⚡ ใส่คำสั่งให้ปุ่มทำงานเมื่อถูกกด ⚡
+                addBtn.addEventListener('click', async () => {
+                    try {
+                        // 1. เปลี่ยนหน้าตาปุ่มเป็น "กำลังโหลด"
+                        addBtn.textContent = 'กำลังเพิ่ม...';
+                        addBtn.style.background = '#363636';
+                        addBtn.disabled = true;
+
+                        // 2. บันทึกเพื่อนลงในฐานข้อมูล (สร้างหมวด friends ใต้ชื่อเรา)
+                        const friendRef = doc(db, "users", currentUserUid, "friends", friendUid);
+                        await setDoc(friendRef, {
+                            name: userData.name,
+                            profilePic: userData.profilePic || '',
+                            addedAt: new Date()
+                        });
+
+                        // 3. เปลี่ยนหน้าตาปุ่มเป็น "เป็นเพื่อนแล้ว"
+                        addBtn.textContent = 'เป็นเพื่อนแล้ว';
+                        addBtn.style.background = '#262626';
+                        addBtn.style.color = '#a8a8a8';
+                        addBtn.style.cursor = 'default';
+                        
+                    } catch (error) {
+                        console.error("บันทึกเพื่อนไม่ได้: ", error);
+                        addBtn.textContent = 'เพิ่มเพื่อน';
+                        addBtn.style.background = '#0095f6';
+                        addBtn.disabled = false;
+                        alert("เกิดข้อผิดพลาด ลองใหม่อีกครั้งครับ");
+                    }
+                });
+
+                // นำปุ่มไปแปะในการ์ด แล้วเอาการ์ดไปโชว์ในหน้าต่าง
+                userCard.appendChild(addBtn);
                 searchResults.appendChild(userCard);
             });
             

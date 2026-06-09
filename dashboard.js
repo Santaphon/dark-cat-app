@@ -107,19 +107,26 @@ document.getElementById('save-profile-btn').addEventListener('click', async () =
     }
 });
 
-// 4. เข้าสู่ห้องแชท
-document.getElementById('go-chat-btn').addEventListener('click', () => {
-    window.location.href = "chat.html";
-});
+// --- แก้ไขโค้ดส่วนล่างสุดของ dashboard.js ให้เป็นแบบนี้ ---
 
-// 5. ออกจากระบบ
-document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
-// 7. ออกจากระบบ (กดแล้วให้เด้งกลับหน้า index.html)
-document.getElementById('logout-btn').addEventListener('click', () => {
-    signOut(auth).then(() => {
-        // เพิ่มบรรทัดนี้ เพื่อสั่งให้เบราว์เซอร์พาเรากลับไปหน้าล็อกอิน
-        window.location.href = "index.html";
-    }).catch((error) => {
-        alert("เกิดข้อผิดพลาดในการออกจากระบบ");
+// 4. เข้าสู่ห้องแชท (ต้องเช็กก่อนว่าปุ่มมีอยู่จริงไหม เพื่อป้องกัน Error)
+const chatBtn = document.getElementById('go-chat-btn');
+if (chatBtn) {
+    chatBtn.addEventListener('click', () => {
+        window.location.href = "chat.html";
     });
-});
+}
+
+// 5. ออกจากระบบ (ใช้ id="logout-btn" ให้ตรงกับใน HTML)
+const logoutBtn = document.getElementById('logout-btn');
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+        signOut(auth).then(() => {
+            window.location.href = "index.html";
+        }).catch((error) => {
+            alert("เกิดข้อผิดพลาดในการออกจากระบบ");
+        });
+    });
+} else {
+    console.error("หาปุ่ม logout-btn ไม่เจอ! เช็ก ID ใน HTML อีกทีนะครับ");
+}

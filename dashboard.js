@@ -114,3 +114,12 @@ document.getElementById('go-chat-btn').addEventListener('click', () => {
 
 // 5. ออกจากระบบ
 document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+// 7. ออกจากระบบ (กดแล้วให้เด้งกลับหน้า index.html)
+document.getElementById('logout-btn').addEventListener('click', () => {
+    signOut(auth).then(() => {
+        // เพิ่มบรรทัดนี้ เพื่อสั่งให้เบราว์เซอร์พาเรากลับไปหน้าล็อกอิน
+        window.location.href = "index.html";
+    }).catch((error) => {
+        alert("เกิดข้อผิดพลาดในการออกจากระบบ");
+    });
+});

@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc,collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBjXONUBgiJ9iys--Rk_pJwKtWu3EnTn9o",
@@ -130,3 +130,24 @@ if (logoutBtn) {
 } else {
     console.error("หาปุ่ม logout-btn ไม่เจอ! เช็ก ID ใน HTML อีกทีนะครับ");
 }
+// ฟังก์ชันค้นหาเพื่อน
+document.getElementById('search-btn').addEventListener('click', async () => {
+    const keyword = document.getElementById('search-input').value.trim();
+    if (!keyword) return;
+
+    // ค้นหาใน Firestore คอลเลกชัน "users"
+    const usersRef = collection(db, "users");
+    // เราใช้การค้นหาแบบง่ายๆ คือตรงตัว (ถ้าจะทำแบบพิมพ์บางส่วนต้องใช้เครื่องมืออื่น)
+    const q = query(usersRef, where("name", "==", keyword)); 
+    
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+        alert("ไม่พบผู้ใช้งานชื่อนี้ครับ");
+    } else {
+        querySnapshot.forEach((doc) => {
+            const userData = doc.data();
+            alert("เจอเพื่อนแล้ว! \nชื่อ: " + userData.name + "\nสถานะ: " + (userData.bio || "-"));
+        });
+    }
+});

@@ -1,0 +1,118 @@
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+
+body {
+    background-color: #0f172a; color: #fff; display: flex;
+    justify-content: center; align-items: center; height: 100vh;
+    overflow: hidden; position: relative;
+}
+
+/* อนิเมชันฉากหลังลูกแก้ว */
+.blob { position: absolute; border-radius: 50%; filter: blur(80px); z-index: -1; animation: float 10s infinite alternate ease-in-out; }
+.shape1 { width: 400px; height: 400px; background: #6366f1; top: -10%; left: -10%; }
+.shape2 { width: 350px; height: 350px; background: #ec4899; bottom: -10%; right: -10%; animation-duration: 12s; }
+.shape3 { width: 200px; height: 200px; background: #8b5cf6; top: 40%; left: 40%; animation-duration: 8s; }
+@keyframes float { 0% { transform: translateY(0) scale(1); } 100% { transform: translateY(50px) scale(1.1); } }
+
+/* เลย์เอาต์หลัก */
+.main-container { display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 60px; width: 90%; max-width: 900px; z-index: 1; }
+
+
+/* ตัวละครน้องแมว 3D เต็มตัว */
+.character-wrapper { 
+    width: 300px; /* ปรับความกว้างให้พอดี */
+    height: auto; /* ปล่อยความสูงให้ยืดตามตัวน้องแมว */
+    perspective: 1000px; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.character-wrapper img { 
+    width: 100%; 
+    transition: transform 0.1s ease-out; 
+    filter: drop-shadow(0 25px 25px rgba(0,0,0,0.6)); /* เพิ่มเงาให้ดูสมจริงขึ้น */
+}
+
+/* ดีไซน์การ์ดฟอร์มกระจก */
+.form-wrapper {
+    background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.2); border-top: 1px solid rgba(255, 255, 255, 0.4);
+    padding: 35px 40px; border-radius: 24px; width: 400px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(255,255,255,0.05);
+}
+
+.form-wrapper h2 { font-size: 1.8rem; margin-bottom: 5px; }
+.subtitle { font-size: 0.9rem; color: #cbd5e1; margin-bottom: 25px; }
+.input-group { margin-bottom: 15px; }
+.input-group label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #cbd5e1; }
+.input-group input {
+    width: 100%; padding: 12px 15px; background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px;
+    color: white; font-size: 1rem; outline: none; transition: all 0.3s ease;
+}
+.input-group input:focus {
+    border-color: #ec4899; box-shadow: 0 0 15px rgba(236, 72, 153, 0.6);
+    background: rgba(0, 0, 0, 0.5); transform: translateY(-2px);
+}
+
+/* --- ส่วนที่เพิ่มใหม่ --- */
+.options-group { display: flex; justify-content: flex-end; margin-bottom: 20px; margin-top: -5px; }
+.forgot-pass { font-size: 0.85rem; color: #cbd5e1; text-decoration: none; transition: color 0.3s; }
+.forgot-pass:hover { color: #ec4899; }
+
+.login-btn {
+    width: 100%; padding: 14px; background: linear-gradient(135deg, #6366f1, #ec4899);
+    border: none; border-radius: 12px; color: white; font-size: 1.1rem; font-weight: 600;
+    cursor: pointer; transition: all 0.3s ease; overflow: hidden;
+}
+.login-btn:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 10px 20px rgba(236, 72, 153, 0.5); }
+
+.divider { display: flex; align-items: center; text-align: center; margin: 20px 0; color: #94a3b8; font-size: 0.85rem; }
+.divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+.divider span { padding: 0 10px; }
+
+.social-login { display: flex; gap: 15px; margin-bottom: 20px; }
+.social-btn {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 10px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px; color: white; font-size: 0.95rem; cursor: pointer; transition: all 0.3s ease;
+}
+.social-btn:hover { background: rgba(255, 255, 255, 0.1); transform: translateY(-2px); border-color: #6366f1; }
+
+.register-link { text-align: center; font-size: 0.9rem; color: #cbd5e1; }
+.register-link a { color: #ec4899; text-decoration: none; font-weight: 600; transition: color 0.3s; }
+.register-link a:hover { color: #6366f1; }
+/* --- เลย์เอาต์และขนาดน้องแมว 3D --- */
+.character-wrapper {
+    width: 250px;
+    height: 250px;
+    perspective: 1000px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.character-wrapper img {
+    width: 100%;
+    transition: transform 0.1s ease-out;
+    filter: drop-shadow(0 25px 30px rgba(0,0,0,0.6)); /* เพิ่มเงาลึกๆ ให้ดู 3D ลอยออกมา */
+}
+/* --- ชื่อเว็บมุมซ้ายบน (Logo) --- */
+/* --- ชื่อเว็บมุมซ้ายบน (Logo) --- */
+.site-logo {
+    position: absolute;
+    top: 25px;         /* ขยับขึ้นไปชิดขอบบนอีกนิด */
+    left: 35px;        /* ขยับไปชิดซ้ายอีกหน่อย */
+    font-size: 1.8rem; /* ปรับขนาดให้เล็กลงกำลังดี */
+    font-weight: 800;
+    color: #030303;
+    letter-spacing: 3px;
+    z-index: 10;
+    text-shadow: 0 4px 15px rgb(255, 255, 255);
+}
+
+/* ไฮไลต์คำว่า CAT ให้เป็นสีชมพูและเรืองแสง */
+.site-logo span {
+    color: #f7f3f3;
+    text-shadow: 0 0 15px rgba(237, 33, 173, 0.6);
+}

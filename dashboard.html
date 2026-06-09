@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark CAT - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="loading-screen">
+        <h1 class="loading-logo">DARK <span>CAT</span></h1>
+        <p style="color: #cbd5e1; margin-top: 10px;">กำลังโหลดข้อมูลของคุณ...</p>
+    </div>
+
+    <div class="site-logo">DARK <span>CAT</span></div>
+    <div class="blob shape1"></div>
+    <div class="blob shape2"></div>
+    <div class="blob shape3"></div>
+
+    <div class="main-container">
+        <div class="form-wrapper" style="width: 400px; text-align: center; max-height: 90vh; overflow-y: auto;">
+            
+            <label for="profile-upload" style="cursor: pointer; display: inline-block;">
+                <img id="profile-img" src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Black%20Cat.png" alt="Profile" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 5px; border: 3px solid #ec4899; box-shadow: 0 0 10px rgba(236,72,153,0.4); background: rgba(255,255,255,0.1);">
+            </label>
+            <input type="file" id="profile-upload" accept="image/*" style="display: none;">
+            <p style="font-size: 0.75rem; color: #cbd5e1; margin-bottom: 15px;">(คลิกที่รูปเพื่อเปลี่ยน)</p>
+            
+            <h2>หน้าหลักผู้ใช้งาน</h2>
+            <p class="subtitle" style="margin-bottom: 15px;">ยินดีต้อนรับสู่โลกของ Dark CAT 🐈‍⬛</p>
+            
+            <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; margin-bottom: 20px;">
+                <p style="color: #cbd5e1; font-size: 0.9rem; margin-bottom: 5px;">บัญชีที่กำลังใช้งาน:</p>
+                <h3 id="user-email" style="color: #ec4899;">กำลังโหลด...</h3>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; margin-bottom: 25px; text-align: left;">
+                <h3 style="margin-bottom: 15px; font-size: 1.1rem; color: #fff; text-align: center;">ตั้งค่าโปรไฟล์ 📝</h3>
+                
+                <div class="input-group">
+                    <label for="profile-name">ชื่อเล่น / นามแฝง</label>
+                    <input type="text" id="profile-name" placeholder="กรอกชื่อของคุณ">
+                </div>
+                <div class="input-group">
+                    <label for="profile-bio">สถานะ / คำคม</label>
+                    <input type="text" id="profile-bio" placeholder="เช่น วันนี้กินข้าวกับอะไรดี?">
+                </div>
+                <button id="save-profile-btn" class="login-btn" style="background: linear-gradient(135deg, #8b5cf6, #6366f1); margin-top: 5px;">บันทึกโปรไฟล์</button>
+            </div>
+            
+            <button id="logout-btn" class="login-btn" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);">ออกจากระบบ</button>
+        </div>
+    </div>
+
+    <script type="module" src="dashboard.js"></script>
+</body>
+</html>

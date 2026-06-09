@@ -130,28 +130,67 @@ if (logoutBtn) {
 } else {
     console.error("หาปุ่ม logout-btn ไม่เจอ! เช็ก ID ใน HTML อีกทีนะครับ");
 }
-// ฟังก์ชันค้นหาเพื่อน
+// ฟังก์ชันระบบค้นหาเพื่อน (Pop-up Modal)
+const searchModal = document.getElementById('search-modal');
+const searchResults = document.getElementById('search-results');
+
+// กดกากบาทปิดหน้าต่าง
+document.getElementById('close-modal-btn').addEventListener('click', () => {
+    searchModal.style.display = 'none';
+});
+
+// เมื่อกดปุ่มค้นหา
 document.getElementById('search-btn').addEventListener('click', async () => {
     const keyword = document.getElementById('search-input').value.trim();
-    if (!keyword) {
-        alert("กรุณากรอกชื่อเพื่อนที่ต้องการค้นหาครับ");
-        return;
-    }
+    if (!keyword) return;
+
+    // เปิดหน้าต่าง Pop-up ขึ้นมาโชว์ตอนกำลังโหลด
+    searchModal.style.display = 'flex';
+    searchResults.innerHTML = '<div style="text-align:center; color:#a8a8a8; margin-top:20px;">กำลังค้นหา... 🐈‍⬛</div>';
 
     try {
         const usersRef = collection(db, "users");
         const q = query(usersRef, where("name", "==", keyword)); 
         const querySnapshot = await getDocs(q);
         
+        searchResults.innerHTML = ''; // ล้างข้อความ "กำลังค้นหา" ออก
+        
         if (querySnapshot.empty) {
-            alert("ไม่พบผู้ใช้งานชื่อ: " + keyword);
+            searchResults.innerHTML = '<div style="text-align:center; color:#a8a8a8; margin-top:20px;">ไม่พบผู้ใช้งานชื่อนี้ครับ</div>';
         } else {
             querySnapshot.forEach((doc) => {
                 const userData = doc.data();
-                alert("เจอเพื่อนแล้ว! \nชื่อ: " + userData.name + "\nสถานะ: " + (userData.bio || "-"));
+                const friendUid = doc.id;
+                
+                // เช็กว่าไม่ใช่ชื่อตัวเอง
+                if(friendUid === currentUserUid) return;
+
+                // สร้างการ์ดรายชื่อเพื่อน
+                const userCard = document.createElement('div');
+                userCard.style.display = 'flex';
+                userCard.style.alignItems = 'center';
+                userCard.style.justifyContent = 'space-between';
+
+                userCard.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <img src="${userData.profilePic || 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Black%20Cat.png'}" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1px solid #262626;">
+                        <div>
+                            <strong style="display: block; font-size: 0.9rem;">${userData.name}</strong>
+                            <span style="color: #a8a8a8; font-size: 0.8rem;">${userData.bio || 'ยังไม่มีสถานะ'}</span>
+                        </div>
+                    </div>
+                    <button style="background: #0095f6; color: white; border: none; padding: 6px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.85rem; transition: background 0.2s;" onmouseover="this.style.background='#1877f2'" onmouseout="this.style.background='#0095f6'">เพิ่มเพื่อน</button>
+                `;
+                searchResults.appendChild(userCard);
             });
+            
+            // กรณีเจอแต่ชื่อตัวเอง
+            if(searchResults.innerHTML === '') {
+                 searchResults.innerHTML = '<div style="text-align:center; color:#a8a8a8; margin-top:20px;">ไม่พบผู้ใช้งานอื่นชื่อนี้ครับ</div>';
+            }
         }
     } catch (e) {
         console.error("ค้นหาผิดพลาด: ", e);
+        searchResults.innerHTML = '<div style="text-align:center; color:#ec4899; margin-top:20px;">เกิดข้อผิดพลาดในการเชื่อมต่อ</div>';
     }
 });

@@ -4,28 +4,57 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DARK CAT - การแจ้งเตือน</title>
-    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        .notify-item { padding: 15px; border-bottom: 1px solid #262626; display: flex; align-items: center; gap: 15px; }
-        .notify-item:hover { background: #121212; }
+        /* จัดโครงสร้างหลัก */
+        * { box-sizing: border-box; }
+        body { 
+            margin: 0; padding: 0; display: flex; height: 100vh; overflow: hidden; 
+            background-color: #000; color: #f5f5f5; font-family: 'Poppins', sans-serif; 
+        }
+        
+        /* แต่งเมนู Sidebar ให้เหมือนหน้าอื่นๆ */
+        .sidebar { 
+            width: 250px; background: #000; border-right: 1px solid #262626; 
+            display: flex; flex-direction: column; padding: 20px; 
+        }
+        .sidebar .logo { font-size: 1.5rem; font-weight: 800; margin-bottom: 40px; letter-spacing: 1px; }
+        .sidebar .logo span { color: #ec4899; }
+        .sidebar .nav-item { 
+            display: flex; align-items: center; gap: 15px; padding: 12px 15px; 
+            color: #f5f5f5; text-decoration: none; font-size: 1.05rem; 
+            border-radius: 10px; margin-bottom: 5px; transition: background 0.2s; 
+        }
+        .sidebar .nav-item:hover { background: #121212; }
+        
+        /* แต่งกล่องแจ้งเตือน */
+        .notify-item { padding: 15px; border-bottom: 1px solid #262626; display: flex; align-items: center; gap: 15px; border-radius: 10px;}
+        .notify-item:hover { background: #121212; cursor: pointer; }
+        
+        /* สกอร์บาร์ */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #363636; border-radius: 10px; }
     </style>
 </head>
-<body style="background: #000; color: #fff; margin: 0; display: flex; height: 100vh; font-family: sans-serif;">
+<body>
 
-    <!-- เมนูเหมือนหน้าหลัก -->
     <nav class="sidebar">
         <div class="logo">DARK <span>CAT</span></div>
         <a href="dashboard.html" class="nav-item">🏠 หน้าหลัก</a>
         <a href="chat.html" class="nav-item">💬 ข้อความ</a>
-        <a href="notifications.html" class="nav-item active" style="color: #ec4899; font-weight: bold;">❤️ การแจ้งเตือน</a>
+        <a href="notifications.html" class="nav-item" style="color: #ec4899; font-weight: bold;">❤️ การแจ้งเตือน</a>
         <a href="profile.html" class="nav-item">👤 โปรไฟล์</a>
+        
+        <div style="margin-top: auto;">
+            <a href="#" class="nav-item" id="logout-btn">🚪 ออกจากระบบ</a>
+        </div>
     </nav>
 
-    <!-- หน้าแสดงผลแจ้งเตือน -->
-    <main style="flex: 1; padding: 20px;">
-        <h2 style="margin-bottom: 20px;">การแจ้งเตือน</h2>
+    <main style="flex: 1; padding: 30px; background: #0a0a0a; overflow-y: auto;">
+        <h2 style="margin-top: 0; margin-bottom: 20px; font-size: 1.5rem; border-bottom: 1px solid #262626; padding-bottom: 15px;">การแจ้งเตือน</h2>
+        
         <div id="notifications-list" style="max-width: 600px;">
-            <div style="color: #a8a8a8;">กำลังโหลดแจ้งเตือน...</div>
+            <div style="color: #a8a8a8; text-align: center; padding: 20px;">กำลังโหลดแจ้งเตือน...</div>
         </div>
     </main>
 

@@ -511,3 +511,14 @@ if (logoutBtn) {
         }).catch((error) => console.error("ออกจากระบบไม่ได้:", error));
     });
 }
+// หลังจากอัปเดต Likes แล้ว (ถ้าเพิ่มไลก์)
+if (!likes.includes(currentUserUid)) {
+    await addDoc(collection(db, "notifications"), {
+        receiverId: post.uid, // เจ้าของโพสต์
+        senderId: currentUserUid, // คนที่มากดไลก์
+        type: "like",
+        postId: post.id,
+        createdAt: serverTimestamp(),
+        read: false
+    });
+}

@@ -63,7 +63,7 @@ async function loadNotifications(uid) {
             item.className = 'notify-item';
             
             // เช็กว่าเป็นแจ้งเตือนประเภทไหน (ตอนนี้มีแค่ Like เดี๋ยวอนาคตอาจมี Follow)
-            let actionText = notif.type === 'like' ? 'ได้ถูกใจโพสต์ของคุณ ❤️' : 'มีปฏิสัมพันธ์กับคุณ';
+            let actionText = notif.type === 'like' ? 'ได้ถูกใจโพสต์ของคุณ ❤️' : (notif.type === 'comment' ? 'ได้คอมเมนต์โพสต์ของคุณ 💬' : 'มีปฏิสัมพันธ์กับคุณ');
 
             item.innerHTML = `
                 <img src="${senderData.profilePic || 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Black%20Cat.png'}" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1px solid #262626;">

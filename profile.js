@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBjXONUBgiJ9iys--Rk_pJwKtWu3EnTn9o",
@@ -17,97 +17,192 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 let currentUserUid = null;
+let profileBase64Image = "";
 
-// โหลดข้อมูลเข้าสู่ระบบ
+// 🌟 พระเอกของงาน: เช็กว่ามีรหัสเพื่อนส่งมาใน URL ไหม? (เช่น profile.html?uid=12345)
+const urlParams = new URLSearchParams(window.location.search);
+const targetUid = urlParams.get('uid'); 
+
+// ดักจับ Element จากหน้าจอหลัก
+const displayNameEl = document.getElementById('display-name');
+const displayBioEl = document.getElementById('display-bio');
+const profileImgEl = document.getElementById('profile-img');
+const userEmailEl = document.getElementById('user-email');
+
+// ปุ่มแก้ไขโปรไฟล์ 
+const editBtn = document.getElementById('edit-profile-btn') || document.getElementById('toggle-edit-btn');
+const editModal = document.getElementById('edit-profile-modal') || document.getElementById('edit-form-section');
+const closeModalBtn = document.getElementById('close-edit-modal-btn') || document.getElementById('cancel-edit-btn');
+const saveBtn = editModal ? editModal.querySelector('#save-profile-btn') : document.getElementById('save-profile-btn');
+
+const nameInput = document.getElementById('edit-name-input') || document.getElementById('profile-name');
+const bioInput = document.getElementById('edit-bio-input') || document.getElementById('profile-bio');
+const picInput = document.getElementById('edit-profile-pic-input') || document.getElementById('profile-upload');
+const previewImg = document.getElementById('edit-preview-img') || document.getElementById('profile-img');
+
+// ==========================================
+// 1. โหลดข้อมูลมาแสดงผล
+// ==========================================
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         currentUserUid = user.uid;
-        document.getElementById('user-email').textContent = user.email;
+        
+        // 🌟 ตัดสินใจว่าจะโชว์ข้อมูลใคร: ถ้ากดดูเพื่อนให้ใช้ targetUid ถ้าดูตัวเองให้ใช้ currentUserUid
+        const displayUid = targetUid ? targetUid : currentUserUid;
 
-        // ดึงข้อมูลโปรไฟล์จากฐานข้อมูล
-        const docSnap = await getDoc(doc(db, "users", currentUserUid));
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            
-            // อัปเดตหน้าแสดงผล
-            if (data.name) {
-                document.getElementById('display-name').textContent = data.name;
-                document.getElementById('profile-name').value = data.name;
-            } else {
-                document.getElementById('display-name').textContent = user.email.split('@')[0];
-            }
-            
-            if (data.bio) {
-                document.getElementById('display-bio').textContent = data.bio;
-                document.getElementById('profile-bio').value = data.bio;
-            }
-            
-            if (data.profilePic) {
-                document.getElementById('profile-img').src = data.profilePic;
-            }
+        // 🌟 ถ้ากำลังดูโปรไฟล์ "เพื่อน" ให้ซ่อนอีเมลและซ่อนปุ่ม "แก้ไขโปรไฟล์" ไปเลย!
+        if (targetUid && targetUid !== currentUserUid) {
+            if (editBtn) editBtn.style.display = 'none';
+            if (userEmailEl) userEmailEl.style.display = 'none';
+        } else {
+            if (userEmailEl) userEmailEl.textContent = user.email;
         }
-        loadMyPosts();
+
+        try {
+            // ดึงข้อมูลผู้ใช้ (ตาม ID ที่เลือกไว้ด้านบน) มาแสดงผล
+            const docSnap = await getDoc(doc(db, "users", displayUid));
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                if (displayNameEl) displayNameEl.textContent = data.name || "ผู้ใช้งาน";
+                if (displayBioEl) displayBioEl.textContent = data.bio || "-";
+                if (profileImgEl) profileImgEl.src = data.profilePic || 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Black%20Cat.png';
+            }
+            
+            // โหลดรูปภาพโพสต์ โดยส่งรหัสคนที่อยากดูไปให้ฟังก์ชันด้วย
+            loadUserPosts(displayUid);
+        } catch (error) {
+            console.error("โหลดข้อมูลโปรไฟล์พัง:", error);
+        }
     } else {
         window.location.href = "index.html";
     }
 });
 
-// เปิด/ปิด ฟอร์มแก้ไขโปรไฟล์
-const editForm = document.getElementById('edit-form-section');
-document.getElementById('toggle-edit-btn').addEventListener('click', () => {
-    editForm.style.display = editForm.style.display === 'block' ? 'none' : 'block';
-});
-document.getElementById('cancel-edit-btn').addEventListener('click', () => {
-    editForm.style.display = 'none';
-});
+// ==========================================
+// 2. ฟังก์ชันโหลดโพสต์ส่วนตัวเข้า Grid
+// ==========================================
+async function loadUserPosts(uidToLoad) {
+    const gridContainer = document.getElementById('profile-post-grid');
+    const postCountElement = document.getElementById('post-count');
+    if (!gridContainer) return;
 
-// ระบบเปลี่ยนรูปโปรไฟล์ (คลิกที่รูปกลมๆ ด้านซ้าย)
-document.getElementById('profile-upload').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file || !currentUserUid) return;
-
-    if (file.size > 1024 * 1024) {
-        alert("ไฟล์รูปใหญ่เกินไปครับ! (ไม่เกิน 1MB)");
-        return;
-    }
-
-    const reader = new FileReader();
-    reader.readAsDataURL(file); 
-    reader.onload = async () => {
-        const base64Image = reader.result; 
-        try {
-            document.getElementById('profile-img').src = base64Image;
-            await setDoc(doc(db, "users", currentUserUid), { profilePic: base64Image }, { merge: true });
-        } catch (error) {
-            alert("อัปโหลดรูปไม่สำเร็จ: " + error.message);
-        }
-    };
-});
-
-// บันทึกข้อมูลที่แก้ไข
-document.getElementById('save-profile-btn').addEventListener('click', async () => {
-    const nameInput = document.getElementById('profile-name').value;
-    const bioInput = document.getElementById('profile-bio').value;
-    if (!currentUserUid) return;
-
+    gridContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #a8a8a8; padding: 20px;">กำลังโหลดรูปภาพ...</div>';
     try {
-        await setDoc(doc(db, "users", currentUserUid), {
-            name: nameInput,
-            bio: bioInput
-        }, { merge: true });
-        
-        // อัปเดตหน้าจอทันที
-        document.getElementById('display-name').textContent = nameInput || "ไม่มีชื่อ";
-        document.getElementById('display-bio').textContent = bioInput || "-";
-        
-        // ปิดฟอร์ม
-        editForm.style.display = 'none';
-    } catch (error) {
-        alert("เกิดข้อผิดพลาด: " + error.message);
-    }
-});
+        const postsRef = collection(db, "posts");
+        // 🌟 ค้นหาเฉพาะโพสต์ที่เป็นของ uidToLoad
+        const q = query(postsRef, where("uid", "==", uidToLoad));
+        const querySnapshot = await getDocs(q);
 
-// ออกจากระบบ
+        gridContainer.innerHTML = ''; 
+
+        if (querySnapshot.empty) {
+            gridContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #a8a8a8; padding: 20px;">ยังไม่มีโพสต์เลยครับ 📷</div>';
+            if (postCountElement) postCountElement.textContent = '0';
+            return;
+        }
+
+        let myPosts = [];
+        querySnapshot.forEach((docSnap) => {
+            myPosts.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        myPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        if (postCountElement) postCountElement.textContent = myPosts.length;
+        
+        myPosts.forEach(post => {
+            const gridItem = document.createElement('div');
+            gridItem.className = 'grid-item';
+            gridItem.innerHTML = `<img src="${post.imageUrl}" alt="User Post">`;
+            gridContainer.appendChild(gridItem);
+        });
+    } catch (error) {
+        console.error("โหลดรูปโพสต์ผิดพลาด: ", error);
+        gridContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #ec4899;">เกิดข้อผิดพลาดในการโหลดรูปภาพ</div>';
+    }
+}
+
+// ==========================================
+// 3. ระบบแก้ไขโปรไฟล์แบบ Pop-up (ใช้ได้เฉพาะตอนดูตัวเอง)
+// ==========================================
+if (editBtn && editModal) {
+    editBtn.addEventListener('click', async () => {
+        if (!currentUserUid) return;
+        try {
+            const userDoc = await getDoc(doc(db, "users", currentUserUid));
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                if (nameInput) nameInput.value = userData.name || "";
+                if (bioInput) bioInput.value = userData.bio || "";
+                if (previewImg) previewImg.src = userData.profilePic || 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Black%20Cat.png';
+            }
+            editModal.style.display = 'flex'; 
+        } catch (error) {
+            console.error("ดึงข้อมูลมาพรีวิวไม่สำเร็จ:", error);
+        }
+    });
+}
+
+if (closeModalBtn && editModal) {
+    closeModalBtn.addEventListener('click', () => {
+        editModal.style.display = 'none';
+        profileBase64Image = ""; 
+    });
+}
+
+if (picInput) {
+    picInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (file.size > 1024 * 1024) {
+            alert("ไฟล์รูปใหญ่เกินไปครับ! ขอไม่เกิน 1MB นะครับ");
+            return;
+        }
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+            profileBase64Image = reader.result;
+            if (previewImg) previewImg.src = profileBase64Image; 
+        };
+    });
+}
+
+if (saveBtn) {
+    saveBtn.addEventListener('click', async () => {
+        const newName = nameInput ? nameInput.value.trim() : "";
+        const newBio = bioInput ? bioInput.value.trim() : "";
+        if (!newName) {
+            alert("กรุณากรอกชื่อผู้ใช้งานด้วยครับ!");
+            return;
+        }
+
+        try {
+            saveBtn.textContent = 'กำลังบันทึก...';
+            saveBtn.disabled = true;
+
+            const updateData = { name: newName, bio: newBio };
+            if (profileBase64Image) {
+                updateData.profilePic = profileBase64Image;
+            }
+
+            const userRef = doc(db, "users", currentUserUid);
+            await updateDoc(userRef, updateData);
+
+            alert("อัปเดตโปรไฟล์เรียบร้อยแล้วครับ! 🎉");
+            if (editModal) editModal.style.display = 'none';
+            window.location.reload(); 
+        } catch (error) {
+            console.error("บันทึกข้อมูลโปรไฟล์พัง:", error);
+            alert("เกิดข้อผิดพลาดในการบันทึกข้อมูลครับ");
+        } finally {
+            saveBtn.textContent = 'บันทึก';
+            saveBtn.disabled = false;
+        }
+    });
+}
+
+// ==========================================
+// 4. ระบบออกจากระบบ (Logout)
+// ==========================================
 const logoutBtn = document.getElementById('logout-btn');
 if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
@@ -115,50 +210,4 @@ if (logoutBtn) {
             window.location.href = "index.html";
         }).catch((error) => console.error("ออกจากระบบไม่ได้:", error));
     });
-}
-// ฟังก์ชันดึงรูปภาพโพสต์มาโชว์ในหน้าโปรไฟล์
-async function loadMyPosts() {
-    const gridContainer = document.getElementById('profile-post-grid');
-    const postCountElement = document.getElementById('post-count');
-    if (!gridContainer || !currentUserUid) return;
-
-    gridContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #a8a8a8; padding: 20px;">กำลังโหลดรูปภาพ...</div>';
-
-    try {
-        // ค้นหาโพสต์ที่เป็นของเรา (เช็กจาก uid)
-        const postsRef = collection(db, "posts");
-        const q = query(postsRef, where("uid", "==", currentUserUid));
-        const querySnapshot = await getDocs(q);
-
-        gridContainer.innerHTML = ''; // ล้างข้อความโหลด
-
-        if (querySnapshot.empty) {
-            gridContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #a8a8a8; padding: 20px;">ยังไม่มีโพสต์เลยครับ 📷</div>';
-            postCountElement.textContent = '0';
-            return;
-        }
-
-        // เก็บโพสต์ใส่ Array และเรียงลำดับเวลา (ใหม่สุดขึ้นก่อน)
-        let myPosts = [];
-        querySnapshot.forEach((docSnap) => {
-            myPosts.push({ id: docSnap.id, ...docSnap.data() });
-        });
-        myPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-        // อัปเดตตัวเลขจำนวนโพสต์
-        postCountElement.textContent = myPosts.length;
-
-        // วาดรูปใส่ตาราง Grid
-        myPosts.forEach(post => {
-            const gridItem = document.createElement('div');
-            gridItem.className = 'grid-item';
-            // ใส่รูปลงไป
-            gridItem.innerHTML = `<img src="${post.imageUrl}" alt="My Post">`;
-            gridContainer.appendChild(gridItem);
-        });
-
-    } catch (error) {
-        console.error("โหลดรูปโปรไฟล์ผิดพลาด: ", error);
-        gridContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #ec4899;">เกิดข้อผิดพลาดในการโหลดรูปภาพ</div>';
-    }
 }

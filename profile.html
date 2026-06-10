@@ -85,7 +85,7 @@
                 <div class="profile-info-section">
                     <div class="username-row">
                         <h2 class="username-text" id="display-name">กำลังโหลด...</h2>
-                        <button class="edit-btn" id="toggle-edit-btn">แก้ไขโปรไฟล์</button>
+                        <button id="edit-profile-btn" style="background: #262626; color: #fff; border: 1px solid #ec4899; padding: 6px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.85rem; margin-left: 15px; transition: 0.2s;">✏️ แก้ไขโปรไฟล์</button>
                     </div>
                     <div class="stats-row">
                         <span><strong id="post-count">0</strong> โพสต์</span>
@@ -103,6 +103,7 @@
                 <h3 style="margin-top: 0; font-size: 1rem;">แก้ไขข้อมูลส่วนตัว</h3>
                 <input type="text" id="profile-name" class="edit-input" placeholder="ชื่อ / นามแฝง">
                 <textarea id="profile-bio" class="edit-input" placeholder="สถานะ / คำคม" rows="3"></textarea>
+                <button id="edit-profile-btn" style="background: #262626; color: white; border: 1px solid #363636; padding: 6px 15px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.85rem; margin-top: 10px;">✏️ แก้ไขโปรไฟล์</button>
                 <button id="save-profile-btn" class="save-btn">บันทึกข้อมูล</button>
                 <button id="cancel-edit-btn" style="background: transparent; color: white; border: none; margin-left: 10px; cursor: pointer;">ยกเลิก</button>
             </div>
@@ -127,7 +128,35 @@
 
         </div>
     </main>
+<div id="edit-profile-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 1000; font-family: sans-serif;">
+    <div style="background: #121212; padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; border: 1px solid #262626;">
+        <h3 style="margin-top: 0; color: #fff; margin-bottom: 20px;">แก้ไขโปรไฟล์ ✏️</h3>
+        
+        <div style="text-align: center; margin-bottom: 20px;">
+            <label style="cursor: pointer; display: inline-block;">
+                <img id="edit-preview-img" src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Black%20Cat.png" style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 2px solid #ec4899; display: block; margin: 0 auto 8px;">
+                <span style="color: #0095f6; font-size: 0.85rem; font-weight: 600;">เปลี่ยนรูปโปรไฟล์</span>
+                <input type="file" id="edit-profile-pic-input" accept="image/*" style="display: none;">
+            </label>
+        </div>
 
+        <div style="margin-bottom: 15px;">
+            <label style="color: #a8a8a8; font-size: 0.85rem; display: block; margin-bottom: 5px;">ชื่อผู้ใช้งาน</label>
+            <input type="text" id="edit-name-input" placeholder="พิมพ์ชื่อใหม่ของคุณ..." style="width: 100%; padding: 10px; background: #000; border: 1px solid #262626; color: #fff; border-radius: 8px; outline: none; font-size: 0.9rem;">
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <label style="color: #a8a8a8; font-size: 0.85rem; display: block; margin-bottom: 5px;">Bio (คำอธิบายตัวเอง)</label>
+            <textarea id="edit-bio-input" rows="3" placeholder="เขียนอะไรเท่ๆ หน่อย..." style="width: 100%; padding: 10px; background: #000; border: 1px solid #262626; color: #fff; border-radius: 8px; outline: none; resize: none; font-size: 0.9rem; font-family: sans-serif;"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button id="close-edit-modal-btn" style="background: #262626; color: #fff; border: none; padding: 8px 18px; border-radius: 8px; cursor: pointer; font-size: 0.85rem;">ยกเลิก</button>
+            <button id="save-profile-btn" style="background: #ec4899; color: #fff; border: none; padding: 8px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">บันทึก</button>
+        </div>
+    </div>
+</div>
     <script type="module" src="profile.js"></script>
+    
 </body>
 </html>

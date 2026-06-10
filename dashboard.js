@@ -19,6 +19,32 @@ const db = getFirestore(app);
 let currentUserUid = null;
 let postBase64Image = ""; 
 
+// ==========================================
+// 🕒 ฟังก์ชันคำนวณเวลาอัจฉริยะ (Smart Timestamps)
+// ==========================================
+function timeAgo(dateString) {
+    if (!dateString) return "เพิ่งโพสต์";
+    
+    const postDate = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - postDate) / 1000);
+
+    if (diffInSeconds < 60) return "เพิ่งโพสต์";
+    
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return `${diffInMinutes} นาทีที่แล้ว`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours} ชั่วโมงที่แล้ว`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays === 1) return "เมื่อวานนี้";
+    if (diffInDays < 7) return `${diffInDays} วันที่แล้ว`;
+
+    // ถ้าโพสต์นานกว่า 7 วัน ให้แสดงเป็น วัน/เดือน/ปี แทน
+    return postDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 // หน้าจอโหลดหน้าเว็บ
 const hideLoadingScreen = () => {
     const loader = document.getElementById('loading-screen');
@@ -204,14 +230,19 @@ async function loadFeedPosts() {
         const isMyPost = post.uid === currentUserUid;
         const deleteBtnHTML = isMyPost ? `<span class="delete-post-btn" style="cursor: pointer; margin-left: auto; font-size: 1.2rem;" title="ลบโพสต์">🗑️</span>` : '';
 
+        const timeText = timeAgo(post.createdAt); // คำนวณเวลาของโพสต์นี้
         const postElement = document.createElement('article');
+        
         postElement.className = 'post';
         postElement.innerHTML = `
-                <div class="post-header">
-                    <img src="${profilePic}" alt="Profile">
-                    <span class="username">${userData.name}</span>
-                    <span class="time">• เพิ่งโพสต์</span>
+                <div class="post-header" style="display: flex; align-items: center;">
+                    <a href="profile.html?uid=${post.uid}" style="text-decoration: none; display: flex; align-items: center; gap: 10px; color: inherit;">
+                        <img src="${profilePic}" alt="Profile" style="cursor: pointer;">
+                        <span class="username" style="cursor: pointer;">${userData.name}</span>
+                    </a>
+                    <span class="time" style="color: #a8a8a8; font-size: 0.8rem; margin-left: 8px;">• ${timeText}</span>
                 </div>
+                
                 <div class="post-image" style="background: #121212;">
                     <img src="${post.imageUrl}" style="width: 100%; display: block;" alt="Post image">
                 </div>

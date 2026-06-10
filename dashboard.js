@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { getFirestore, collection, query, where, getDocs, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getFirestore, collection, query, where, getDocs, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBjXONUBgiJ9iys--Rk_pJwKtWu3EnTn9o",
@@ -198,11 +198,15 @@ async function loadFeedPosts() {
             const likes = post.likes || []; 
             const isLiked = likes.includes(currentUserUid);
             const heartIcon = isLiked ? '❤️' : '🤍';
-            const likeCount = likes.length;
+        const likeCount = likes.length;
 
-            const postElement = document.createElement('article');
-            postElement.className = 'post';
-            postElement.innerHTML = `
+        // 🌟 เช็กว่าเป็นโพสต์ของเราไหม ถ้าใช่ให้สร้างปุ่มถังขยะ
+        const isMyPost = post.uid === currentUserUid;
+        const deleteBtnHTML = isMyPost ? `<span class="delete-post-btn" style="cursor: pointer; margin-left: auto; font-size: 1.2rem;" title="ลบโพสต์">🗑️</span>` : '';
+
+        const postElement = document.createElement('article');
+        postElement.className = 'post';
+        postElement.innerHTML = `
                 <div class="post-header">
                     <img src="${profilePic}" alt="Profile">
                     <span class="username">${userData.name}</span>
@@ -213,8 +217,9 @@ async function loadFeedPosts() {
                 </div>
                 <div class="post-actions" style="margin-top: 10px; font-size: 1.5rem; display: flex; gap: 15px; align-items: center;">
                     <span class="like-btn" style="cursor: pointer; transition: transform 0.2s;">${heartIcon}</span> 
-                    <span style="cursor: pointer;">💬</span> 
+                    <span class="comment-toggle-btn" style="cursor: pointer; transition: transform 0.2s;">💬</span> 
                     <span style="cursor: pointer;">📤</span>
+                    ${deleteBtnHTML}
                 </div>
                 <div class="like-count-display" style="font-size: 0.9rem; font-weight: 600; margin-top: 5px;">
                     ${likeCount} ถูกใจ
@@ -222,11 +227,129 @@ async function loadFeedPosts() {
                 <div class="post-caption" style="font-size: 0.9rem; margin-top: 5px; line-height: 1.5;">
                     <strong>${userData.name}</strong> ${post.caption}
                 </div>
+
+                <div class="comments-section" style="display: none; margin-top: 15px; border-top: 1px solid #262626; padding-top: 15px;">
+                    <div class="comments-list" style="max-height: 150px; overflow-y: auto; margin-bottom: 10px; font-size: 0.85rem; display: flex; flex-direction: column; gap: 8px;">
+                        <div style="text-align: center; color: #a8a8a8;">กำลังเตรียมช่องคอมเมนต์...</div>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" class="comment-input" placeholder="แสดงความคิดเห็น..." style="flex: 1; padding: 8px 15px; border-radius: 20px; border: 1px solid #363636; background: #121212; color: white; outline: none; font-size: 0.85rem;">
+                        <button class="send-comment-btn" style="background: transparent; color: #0095f6; border: none; font-weight: bold; cursor: pointer; padding: 0 10px;">โพสต์</button>
+                    </div>
+                </div>
             `;
 
+            // ดึงปุ่มต่างๆ บนโพสต์มาเตรียมไว้
             const likeBtn = postElement.querySelector('.like-btn');
             const likeCountDisplay = postElement.querySelector('.like-count-display');
+            
+            // 🌟 แทรกโค้ดดึงปุ่มคอมเมนต์เพิ่มตรงนี้ครับ! 🌟
+            const commentToggleBtn = postElement.querySelector('.comment-toggle-btn');
+            const commentsSection = postElement.querySelector('.comments-section');
 
+            // 🌟 คำสั่งเมื่อกดปุ่มไอคอนแชท 💬 ให้เปิด/ปิดกล่องคอมเมนต์
+            commentToggleBtn.addEventListener('click', () => {
+                // ใส่เอฟเฟกต์เด้งดึ๋งให้ปุ่มน่ารักๆ
+                commentToggleBtn.style.transform = 'scale(1.3)';
+                setTimeout(() => commentToggleBtn.style.transform = 'scale(1)', 150);
+
+                // สลับโชว์/ซ่อน กล่องคอมเมนต์
+                if (commentsSection.style.display === 'none') {
+                    commentsSection.style.display = 'block';
+                } else {
+                    commentsSection.style.display = 'none';
+                }
+            });
+            // ==========================================
+            // 🌟 3. ระบบดึงและส่งคอมเมนต์ 🌟
+            // ==========================================
+            const sendCommentBtn = postElement.querySelector('.send-comment-btn');
+            const commentInput = postElement.querySelector('.comment-input');
+            const commentsList = postElement.querySelector('.comments-list');
+
+            // 3.1 ฟังก์ชันดึงคอมเมนต์มาแสดง
+            const loadComments = async () => {
+                try {
+                    // เข้าไปที่โฟลเดอร์ comments ย่อยของโพสต์นั้นๆ
+                    const commentsRef = collection(db, "posts", post.id, "comments");
+                    const qSnap = await getDocs(commentsRef);
+                    
+                    commentsList.innerHTML = ''; // ล้างคำว่ากำลังเตรียมช่องคอมเมนต์
+                    
+                    if (qSnap.empty) {
+                        commentsList.innerHTML = '<div style="text-align: center; color: #555; padding: 10px 0;">ยังไม่มีคอมเมนต์ เริ่มพิมพ์คนแรกเลย! 💬</div>';
+                        return;
+                    }
+
+                    let allComments = [];
+                    qSnap.forEach(doc => allComments.push(doc.data()));
+                    // เรียงเวลาจากเก่าไปใหม่ (บนลงล่าง)
+                    allComments.sort((a, b) => a.createdAt - b.createdAt);
+
+                    allComments.forEach(c => {
+                        const cEl = document.createElement('div');
+                        cEl.style.cssText = "display: flex; gap: 10px; margin-bottom: 8px; align-items: flex-start;";
+                        cEl.innerHTML = `
+                            <img src="${c.profilePic || 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Black%20Cat.png'}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1px solid #262626; margin-top: 2px;">
+                            <div style="background: #1a1a1a; padding: 6px 12px; border-radius: 15px; border-top-left-radius: 4px; max-width: 85%;">
+                                <strong style="color: #f5f5f5; font-size: 0.8rem; display: block; margin-bottom: 2px;">${c.name}</strong> 
+                                <span style="color: #ccc; font-size: 0.85rem; line-height: 1.4;">${c.text}</span>
+                            </div>
+                        `;
+                        commentsList.appendChild(cEl);
+                    });
+                } catch (err) {
+                    console.error("โหลดคอมเมนต์พัง:", err);
+                }
+            };
+
+            // สั่งให้โหลดคอมเมนต์ทันทีที่หน้าฟีดโชว์ขึ้นมา
+            loadComments();
+
+            // 3.2 คำสั่งตอนกดปุ่ม "โพสต์" เพื่อส่งคอมเมนต์
+            sendCommentBtn.addEventListener('click', async () => {
+                const text = commentInput.value.trim();
+                if (!text) return; // ถ้าพิมพ์ช่องว่างเฉยๆ ไม่ต้องส่ง
+                
+                try {
+                    sendCommentBtn.textContent = '...';
+                    sendCommentBtn.disabled = true;
+
+                    // เอาข้อมูลชื่อและรูปเราไปแปะในคอมเมนต์ด้วย จะได้โชว์ได้ทันที
+                    const myDoc = await getDoc(doc(db, "users", currentUserUid));
+                    const myData = myDoc.exists() ? myDoc.data() : { name: "ฉันเอง", profilePic: "" };
+
+                    // บันทึกลงฐานข้อมูล
+                    await addDoc(collection(db, "posts", post.id, "comments"), {
+                        uid: currentUserUid,
+                        name: myData.name || "ผู้ใช้งาน",
+                        profilePic: myData.profilePic || "",
+                        text: text,
+                        createdAt: Date.now() 
+                    });
+
+                    // 🌟 ส่งแจ้งเตือนหาเจ้าของโพสต์ด้วย (ถ้าไม่ใช่โพสต์เราเอง)
+                    if (post.uid !== currentUserUid) {
+                        await addDoc(collection(db, "notifications"), {
+                            receiverId: post.uid,
+                            senderId: currentUserUid,
+                            type: "comment",
+                            postId: post.id,
+                            createdAt: serverTimestamp(),
+                            read: false
+                        });
+                    }
+
+                    commentInput.value = ''; // ล้างช่องพิมพ์
+                    await loadComments(); // รีเฟรชคอมเมนต์ใหม่ให้โชว์เด้งขึ้นมาเลย
+
+                } catch (err) {
+                    console.error("ส่งคอมเมนต์ไม่ได้:", err);
+                } finally {
+                    sendCommentBtn.textContent = 'โพสต์';
+                    sendCommentBtn.disabled = false;
+                }
+            });
             // ฟังก์ชันกดหัวใจ (มีระบบส่งแจ้งเตือนในตัวแบบสมบูรณ์)
             likeBtn.addEventListener('click', async () => {
                 likeBtn.style.transform = 'scale(1.3)';
@@ -263,7 +386,24 @@ async function loadFeedPosts() {
                     console.error("กดหัวใจไม่สำเร็จ:", error);
                 }
             });
-
+             // 🌟 ระบบกดปุ่มลบโพสต์
+        if (isMyPost) {
+            const deleteBtn = postElement.querySelector('.delete-post-btn');
+            deleteBtn.addEventListener('click', async () => {
+                const confirmDelete = confirm("แน่ใจนะว่าจะลบโพสต์นี้ทิ้ง? 😿");
+                if (confirmDelete) {
+                    try {
+                        // ลบข้อมูลออกจากฐานข้อมูล Firebase
+                        await deleteDoc(doc(db, "posts", post.id));
+                        // รีเฟรชหน้าจอใหม่ให้โพสต์หายไป
+                        loadFeedPosts(); 
+                    } catch (error) {
+                        console.error("ลบโพสต์ไม่สำเร็จ:", error);
+                        alert("เกิดข้อผิดพลาดในการลบโพสต์ครับ");
+                    }
+                }
+            });
+        }
             feedContainer.appendChild(postElement);
         }
     } catch (e) {

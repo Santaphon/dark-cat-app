@@ -89,9 +89,9 @@
         <a href="#" class="nav-item">
             <span class="nav-icon">❤️</span> การแจ้งเตือน
         </a>
-        <a href="#" class="nav-item">
-            <span class="nav-icon">➕</span> สร้าง
-        </a>
+        <a href="#" class="nav-item" id="create-nav-btn" style="text-decoration: none;">
+    <span class="nav-icon">➕</span> สร้าง
+         </a>
         <a href="profile.html" class="nav-item" style="text-decoration: none;">
     <span class="nav-icon">👤</span> โปรไฟล์
        </a>
@@ -170,6 +170,27 @@
             <div id="search-results" style="padding: 20px; min-height: 150px; max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px;">
                 </div>
 
+        </div>
+    </div>
+    <div id="create-post-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
+        <div style="background: #121212; width: 400px; border-radius: 12px; border: 1px solid #262626; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            
+            <div style="padding: 15px; border-bottom: 1px solid #262626; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; font-size: 1rem; text-align: center; flex: 1;">สร้างโพสต์ใหม่</h3>
+                <button id="close-create-btn" style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; padding: 0;">✕</button>
+            </div>
+            
+            <div style="padding: 20px; display: flex; flex-direction: column; gap: 15px;">
+                <label for="post-image-upload" style="cursor: pointer; background: #000; border: 2px dashed #363636; border-radius: 8px; height: 200px; display: flex; justify-content: center; align-items: center; overflow: hidden;">
+                    <span id="upload-placeholder" style="color: #a8a8a8; font-size: 0.9rem;">+ อัปโหลดรูปภาพ (ไม่เกิน 1MB)</span>
+                    <img id="post-image-preview" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                </label>
+                <input type="file" id="post-image-upload" accept="image/*" style="display: none;">
+                
+                <textarea id="post-caption" placeholder="เขียนคำบรรยาย..." rows="3" style="background: #000; border: 1px solid #363636; color: white; padding: 10px; border-radius: 8px; outline: none; font-family: 'Poppins', sans-serif; resize: none; font-size: 0.9rem;"></textarea>
+                
+                <button id="share-post-btn" style="background: #ec4899; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s;">แชร์โพสต์</button>
+            </div>
         </div>
     </div>
     <script type="module" src="dashboard.js"></script>

@@ -49,6 +49,7 @@ onAuthStateChanged(auth, async (user) => {
         }
         
         hideLoadingScreen(); 
+        loadFeedPosts();
     } else {
         window.location.href = "index.html";
     }
@@ -235,5 +236,150 @@ document.getElementById('search-btn').addEventListener('click', async () => {
     } catch (e) {
         console.error("ค้นหาผิดพลาด: ", e);
         searchResults.innerHTML = '<div style="text-align:center; color:#ec4899; margin-top:20px;">เกิดข้อผิดพลาดในการเชื่อมต่อ</div>';
+    }
+});
+// ฟังก์ชันดึงโพสต์จากฐานข้อมูลมาแสดงที่หน้าหลัก
+async function loadFeedPosts() {
+    const feedContainer = document.querySelector('.feed');
+    if (!feedContainer) return;
+
+    try {
+        const postsRef = collection(db, "posts");
+        const postSnapshot = await getDocs(postsRef);
+
+        // ล้างหน้า Feed เดิม (ลบโพสต์ V2.0 ตัวอย่างทิ้ง)
+        feedContainer.innerHTML = '';
+
+        if (postSnapshot.empty) {
+            feedContainer.innerHTML = '<div style="text-align:center; color:#a8a8a8; margin-top:50px;">ยังไม่มีโพสต์เลย เริ่มสร้างโพสต์แรกของคุณสิ! 🐈‍⬛</div>';
+            return;
+        }
+
+        // เก็บข้อมูลโพสต์มาเรียงลำดับ (เอาโพสต์ล่าสุดขึ้นก่อน)
+        let allPosts = [];
+        postSnapshot.forEach((docSnap) => {
+            allPosts.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        allPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        // วนลูปวาดโพสต์ทีละอัน
+        for (const post of allPosts) {
+            // ไปดึงข้อมูลคนที่โพสต์ (เพื่อเอารูปโปรไฟล์และชื่อ)
+            const userDoc = await getDoc(doc(db, "users", post.uid));
+            const userData = userDoc.exists() ? userDoc.data() : { name: "ผู้ใช้งาน", profilePic: "" };
+            const profilePic = userData.profilePic || 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Black%20Cat.png';
+
+            // สร้างการ์ดโพสต์
+            const postElement = document.createElement('article');
+            postElement.className = 'post';
+            postElement.innerHTML = `
+                <div class="post-header">
+                    <img src="${profilePic}" alt="Profile">
+                    <span class="username">${userData.name}</span>
+                    <span class="time">• เพิ่งโพสต์</span>
+                </div>
+                <div class="post-image" style="background: #121212;">
+                    <img src="${post.imageUrl}" style="width: 100%; display: block;" alt="Post image">
+                </div>
+                <div class="post-actions" style="margin-top: 10px; font-size: 1.5rem; display: flex; gap: 15px;">
+                    <span style="cursor: pointer;">❤️</span> <span style="cursor: pointer;">💬</span> <span style="cursor: pointer;">📤</span>
+                </div>
+                <div class="post-caption" style="font-size: 0.9rem; margin-top: 10px; line-height: 1.5;">
+                    <strong>${userData.name}</strong> ${post.caption}
+                </div>
+            `;
+            feedContainer.appendChild(postElement);
+        }
+    } catch (error) {
+        console.error("โหลดโพสต์ผิดพลาด:", error);
+    }
+}
+// --- ระบบสร้างโพสต์ (Create Post) ---
+const createBtn = document.getElementById('create-nav-btn');
+const createModal = document.getElementById('create-post-modal');
+const closeCreateBtn = document.getElementById('close-create-btn');
+const postImageUpload = document.getElementById('post-image-upload');
+const postImagePreview = document.getElementById('post-image-preview');
+const uploadPlaceholder = document.getElementById('upload-placeholder');
+let postBase64Image = "";
+
+// เปิด/ปิด หน้าต่าง
+if (createBtn) {
+    createBtn.addEventListener('click', (e) => {
+        e.preventDefault(); // ป้องกันเว็บเด้งกลับขึ้นบน
+        createModal.style.display = 'flex';
+    });
+}
+closeCreateBtn.addEventListener('click', () => {
+    createModal.style.display = 'none';
+});
+
+// พรีวิวรูปภาพก่อนแชร์
+postImageUpload.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 1024 * 1024) {
+        alert("ไฟล์รูปใหญ่เกินไปครับ! (ขอไม่เกิน 1MB นะ)");
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file); 
+    reader.onload = () => {
+        postBase64Image = reader.result; 
+        postImagePreview.src = postBase64Image;
+        postImagePreview.style.display = 'block';
+        uploadPlaceholder.style.display = 'none';
+    };
+});
+
+// ส่งข้อมูลโพสต์ขึ้น Firestore
+document.getElementById('share-post-btn').addEventListener('click', async () => {
+    const caption = document.getElementById('post-caption').value.trim();
+    const shareBtn = document.getElementById('share-post-btn');
+    
+    if (!postBase64Image) {
+        alert("กรุณาเลือกรูปภาพสุดเท่ของคุณก่อนครับ!");
+        return;
+    }
+
+    try {
+        shareBtn.textContent = 'กำลังแชร์...';
+        shareBtn.style.background = '#363636';
+        shareBtn.disabled = true;
+
+        const user = auth.currentUser;
+        if (!user) throw new Error("ไม่พบข้อมูลผู้ใช้");
+        const myUid = user.uid;
+
+        // สร้าง ID โพสต์ไม่ซ้ำกันด้วยตัวเลขเวลา
+        const postId = "post_" + Date.now().toString(); 
+        const newPostRef = doc(db, "posts", postId); 
+        
+        await setDoc(newPostRef, {
+            uid: myUid,
+            imageUrl: postBase64Image,
+            caption: caption,
+            createdAt: new Date().toISOString()
+        });
+
+        alert("แชร์โพสต์สำเร็จ! 🎉");
+        createModal.style.display = 'none';
+        loadFeedPosts();
+        // ล้างข้อมูลฟอร์มให้สะอาด เผื่อสร้างโพสต์ใหม่
+        postBase64Image = "";
+        postImagePreview.src = "";
+        postImagePreview.style.display = 'none';
+        uploadPlaceholder.style.display = 'block';
+        document.getElementById('post-caption').value = '';
+
+    } catch (error) {
+        console.error("สร้างโพสต์ไม่ได้: ", error);
+        alert("เกิดข้อผิดพลาดในการแชร์โพสต์");
+    } finally {
+        shareBtn.textContent = 'แชร์โพสต์';
+        shareBtn.style.background = '#ec4899';
+        shareBtn.disabled = false;
     }
 });

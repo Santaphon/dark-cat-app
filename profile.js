@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBjXONUBgiJ9iys--Rk_pJwKtWu3EnTn9o",
@@ -46,6 +46,7 @@ onAuthStateChanged(auth, async (user) => {
                 document.getElementById('profile-img').src = data.profilePic;
             }
         }
+        loadMyPosts();
     } else {
         window.location.href = "index.html";
     }
@@ -114,4 +115,50 @@ if (logoutBtn) {
             window.location.href = "index.html";
         }).catch((error) => console.error("ออกจากระบบไม่ได้:", error));
     });
+}
+// ฟังก์ชันดึงรูปภาพโพสต์มาโชว์ในหน้าโปรไฟล์
+async function loadMyPosts() {
+    const gridContainer = document.getElementById('profile-post-grid');
+    const postCountElement = document.getElementById('post-count');
+    if (!gridContainer || !currentUserUid) return;
+
+    gridContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #a8a8a8; padding: 20px;">กำลังโหลดรูปภาพ...</div>';
+
+    try {
+        // ค้นหาโพสต์ที่เป็นของเรา (เช็กจาก uid)
+        const postsRef = collection(db, "posts");
+        const q = query(postsRef, where("uid", "==", currentUserUid));
+        const querySnapshot = await getDocs(q);
+
+        gridContainer.innerHTML = ''; // ล้างข้อความโหลด
+
+        if (querySnapshot.empty) {
+            gridContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #a8a8a8; padding: 20px;">ยังไม่มีโพสต์เลยครับ 📷</div>';
+            postCountElement.textContent = '0';
+            return;
+        }
+
+        // เก็บโพสต์ใส่ Array และเรียงลำดับเวลา (ใหม่สุดขึ้นก่อน)
+        let myPosts = [];
+        querySnapshot.forEach((docSnap) => {
+            myPosts.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        myPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        // อัปเดตตัวเลขจำนวนโพสต์
+        postCountElement.textContent = myPosts.length;
+
+        // วาดรูปใส่ตาราง Grid
+        myPosts.forEach(post => {
+            const gridItem = document.createElement('div');
+            gridItem.className = 'grid-item';
+            // ใส่รูปลงไป
+            gridItem.innerHTML = `<img src="${post.imageUrl}" alt="My Post">`;
+            gridContainer.appendChild(gridItem);
+        });
+
+    } catch (error) {
+        console.error("โหลดรูปโปรไฟล์ผิดพลาด: ", error);
+        gridContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #ec4899;">เกิดข้อผิดพลาดในการโหลดรูปภาพ</div>';
+    }
 }

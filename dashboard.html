@@ -91,7 +91,7 @@
         </a>
         <a href="#" class="nav-item" id="create-nav-btn" style="text-decoration: none;">
     <span class="nav-icon">➕</span> สร้าง
-         </a>
+       </a>
         <a href="profile.html" class="nav-item" style="text-decoration: none;">
     <span class="nav-icon">👤</span> โปรไฟล์
        </a>
@@ -127,35 +127,28 @@
             </article>
         </div>
 
-        <aside class="right-panel">
+        <aside class="right-panel" style="width: 319px; padding: 20px 0;">
+            <div class="user-mini-profile" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <img id="right-panel-img" src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Black%20Cat.png" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover;">
+                    <div>
+                        <strong id="right-panel-name" style="font-size: 0.9rem; display: block;">กำลังโหลด...</strong>
+                        <span id="right-panel-bio" style="font-size: 0.85rem; color: #a8a8a8;">...</span>
+                    </div>
+                </div>
+                <span style="color: #0095f6; font-size: 0.75rem; font-weight: 600; cursor: pointer;">สลับ</span>
+            </div>
+
+            <div class="suggestions-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <span style="color: #a8a8a8; font-weight: 600; font-size: 0.9rem;">เพื่อนของคุณ</span>
+                <span style="color: #f5f5f5; font-size: 0.8rem; cursor: pointer;">ดูทั้งหมด</span>
+            </div>
             
-            <div class="my-profile">
-                <label for="profile-upload" style="margin: 0;">
-                    <img id="profile-img" class="my-profile-pic" src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Black%20Cat.png" alt="Profile" title="คลิกเพื่อเปลี่ยนรูป">
-                </label>
-                <input type="file" id="profile-upload" accept="image/*">
-                
-                <div class="my-profile-info">
-                    <strong id="display-name">กำลังโหลด...</strong>
-                    <span id="display-bio" style="display: block; width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">"..."</span>
+            <div id="friends-list-container" style="display: flex; flex-direction: column; gap: 15px;">
+                <div style="text-align: center; color: #a8a8a8; font-size: 0.8rem;">กำลังโหลดเพื่อน...</div>
+            </div>
+            <div class="footer-links" style="margin-top: 30px; font-size: 0.75rem; color: #737373; line-height: 1.5;">
                 </div>
-                <button class="text-btn">สลับ</button>
-            </div>
-          
-            <div class="edit-profile-box">
-                <input type="text" id="profile-name" class="edit-input" placeholder="ตั้งชื่อเล่น">
-                <input type="text" id="profile-bio" class="edit-input" placeholder="อัปเดตสถานะวันนี้">
-                <button id="save-profile-btn" class="save-btn">อัปเดตข้อมูล</button>
-                <div style="margin-top: 10px; text-align: center;">
-                    <span id="user-email" style="color: #363636; font-size: 0.7rem;">อีเมลผู้ใช้</span>
-                </div>
-            </div>
-
-            <div style="margin-top: 30px; font-size: 0.75rem; color: #363636; line-height: 1.6;">
-                เกี่ยวกับ • ความช่วยเหลือ • API • ความเป็นส่วนตัว<br>ข้อกำหนด • สถานที่ • ภาษา<br><br>
-                © 2026 DARK CAT APP
-            </div>
-
         </aside>
         
     </main>

@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { getFirestore, collection, getDocs, addDoc, serverTimestamp, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, addDoc, serverTimestamp, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBjXONUBgiJ9iys--Rk_pJwKtWu3EnTn9o",
@@ -97,47 +97,75 @@ if (submitBtn) {
 }
 
 // ==========================================
-// 🔄 ระบบดึงกิจกรรมมาแสดงผลแบบการ์ด
+// 🔄 ระบบดึงกิจกรรมมาแสดงผลแบบการ์ด (อัปเกรดระบบจับเวลา)
 // ==========================================
-const eventsContainer = document.getElementById('events-list-container');
-
 async function fetchEvents() {
+    const eventsContainer = document.getElementById('events-list-container');
     if (!eventsContainer) return;
+
     try {
         const querySnapshot = await getDocs(collection(db, "events"));
         eventsContainer.innerHTML = '';
+        
+        let activeEventCount = 0; // 🌟 ตัวช่วยนับว่ามีกิจกรรมที่ยังไม่หมดเวลาเหลือไหม
 
         if (querySnapshot.empty) {
             eventsContainer.innerHTML = '<p style="color: #a8a8a8; text-align: center;">ยังไม่มีกิจกรรมในเร็วๆ นี้ครับ เป็นเจ้าภาพจัดงานแรกเลยไหม!</p>';
             return;
         }
 
-        querySnapshot.forEach((doc) => {
-            const event = doc.data();
-            
+        querySnapshot.forEach((docSnap) => {
+            const event = docSnap.data();
+            const eventId = docSnap.id;
+
+            // ⏳ ระบบตรวจสอบเวลาหมดอายุ
+            // 1. แปลงข้อความ "2026-06-11 เวลา 20:00 น." กลับเป็น "2026-06-11T20:00" ให้คอมพิวเตอร์อ่านออก
+            const eventTimeStr = event.date.replace(' เวลา ', 'T').replace(' น.', '');
+            const eventDateObj = new Date(eventTimeStr);
+            const now = new Date(); // ดึงเวลาปัจจุบันเป๊ะๆ วินาทีนี้
+
+            // 2. ถ้าเวลาปัจจุบัน เลยเวลากิจกรรมไปแล้ว = ให้ข้ามการ์ดใบนี้ไปเลย!
+            if (now > eventDateObj) {
+                return; 
+            }
+
+            // ถ้ารอดมาได้ แปลว่าเป็นกิจกรรมที่ยังไม่หมดเวลา
+            activeEventCount++; 
+
             // สร้างหน้าตาการ์ดกิจกรรม
-            const card = `
-                <div style="background: #0d0d0d; border: 1px solid #262626; border-radius: 12px; padding: 15px; display: flex; gap: 15px; transition: 0.3s;" onmouseover="this.style.borderColor='${savedThemeColor}'" onmouseout="this.style.borderColor='#262626'">
-                   <img src="${event.imageUrl}" onerror="this.src='https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Party%20Popper.png'" style="width: 90px; height: 90px; border-radius: 10px; object-fit: cover; border: 1px solid #262626; background: #1a1a1a; padding: 5px;">
-                    <div style="flex: 1;">
-                        <h3 style="color: white; margin: 0 0 5px 0; font-size: 1.1rem; font-family: 'Kanit', sans-serif;">${event.name}</h3>
-                        <p style="color: ${savedThemeColor}; margin: 0 0 5px 0; font-size: 0.85rem; font-weight: bold;">⏰ ${event.date}</p>
-                        <p style="color: #a8a8a8; margin: 0 0 5px 0; font-size: 0.85rem;">📍 ${event.location}</p>
-                        <p style="color: #f5f5f5; margin: 0 0 0 0; font-size: 0.8rem;">${event.description}</p>
+           const card = `
+                <div style="background: #0d0d0d; border: 1px solid #262626; border-radius: 12px; padding: 15px; display: flex; align-items: center; gap: 15px; transition: 0.3s;" onmouseover="this.style.borderColor='${savedThemeColor}'" onmouseout="this.style.borderColor='#262626'">
+                    
+                    <img src="${event.imageUrl}" onerror="this.src='https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Party%20Popper.png'" style="width: 90px; height: 90px; border-radius: 10px; object-fit: cover; flex-shrink: 0; background: #1a1a1a; padding: 5px;">
+                    
+                    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px;">
+                        <h3 style="color: white; margin: 0; font-size: 1.1rem; font-family: 'Kanit', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${event.name}</h3>
+                        <p style="color: ${savedThemeColor}; margin: 0; font-size: 0.85rem; font-weight: bold;">⏰ ${event.date}</p>
+                        <p style="color: #a8a8a8; margin: 0; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">📍 ${event.location}</p>
+                        <p style="color: #f5f5f5; margin: 0; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${event.description}</p>
                     </div>
                     
-                    <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-width: 80px; border-left: 1px dashed #262626; padding-left: 15px;">
-                        <span style="color: white; font-weight: bold; font-size: 1.5rem;">${event.attendeesCount || 1}</span>
+                    <div style="position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; min-width: 80px; border-left: 1px dashed #262626; padding-left: 15px; flex-shrink: 0; min-height: 90px;">
+                        
+                        <span class="save-event-btn" data-id="${eventId}" data-name="${event.name}" data-date="${event.date}" data-location="${event.location}" data-img="${event.imageUrl}" style="position: absolute; top: 70px; left: -40px; color: #a8a8a8; cursor: pointer; font-size: 1.2rem; transition: 0.2s;" onmouseover="this.style.color='${savedThemeColor}'" onmouseout="this.style.color='#a8a8a8'" title="บันทึกกิจกรรม">🔖</span>
+                        
+                        <span style="color: white; font-weight: bold; font-size: 1.5rem; margin-top: 15px;">${event.attendeesCount || 1}</span>
                         <span style="color: #a8a8a8; font-size: 0.75rem;">เข้าร่วม</span>
-                        <button class="join-event-btn" data-id="${doc.id}" data-count="${event.attendeesCount || 1}" 
-                        style="margin-top: 10px; background: #1a1a1a; color: ${savedThemeColor}; border: 1px solid ${savedThemeColor}; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: 'Kanit', sans-serif;">
-                       ลงชื่อ
-                         </button>
+                        <button class="join-event-btn" data-id="${eventId}" data-count="${event.attendeesCount || 1}" style="margin-top: auto; background: #1a1a1a; color: ${savedThemeColor}; border: 1px solid ${savedThemeColor}; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: 'Kanit', sans-serif; width: 100%;">
+                            ลงชื่อ
+                        </button>
                     </div>
+                    
                 </div>
             `;
             eventsContainer.innerHTML += card;
         });
+
+        // 🌟 ถ้ากิจกรรมเก่าๆ หมดเวลาไปจนเกลี้ยงหน้ากระดานแล้ว ให้ขึ้นข้อความนี้แทน
+        if (activeEventCount === 0) {
+            eventsContainer.innerHTML = '<p style="color: #a8a8a8; text-align: center;">กิจกรรมทั้งหมดจบลงไปแล้ว... มารอจอยปาร์ตี้ใหม่กันนะครับ!</p>';
+        }
+
     } catch (error) {
         console.error("ดึงข้อมูลพลาด: ", error);
         eventsContainer.innerHTML = '<p style="color: #ff4d4f; text-align: center;">โหลดข้อมูลไม่สำเร็จ ลองรีเฟรชใหม่นะครับ</p>';
@@ -222,6 +250,37 @@ document.addEventListener('click', async (e) => {
             fetchEvents(); // รีเฟรชหน้าจอโชว์เลขใหม่
         } catch (error) {
             console.error("ลงชื่อไม่สำเร็จ: ", error);
+            alert("อ๊ะ! ระบบขัดข้องเล็กน้อย");
+        }
+    }
+});
+// ==========================================
+// 🔖 ระบบดักจับการกดปุ่ม "บันทึกกิจกรรม"
+// ==========================================
+document.addEventListener('click', async (e) => {
+    if (e.target && e.target.classList.contains('save-event-btn')) {
+        const btn = e.target;
+        
+        // เช็กก่อนว่ามี user ล็อกอินอยู่ไหม
+        if (!auth.currentUser) return alert("กรุณาล็อกอินก่อนครับ!");
+
+        try {
+            await addDoc(collection(db, "saves"), {
+                userId: auth.currentUser.uid,
+                type: 'event',
+                eventId: btn.getAttribute('data-id'),
+                name: btn.getAttribute('data-name'),
+                date: btn.getAttribute('data-date'),
+                location: btn.getAttribute('data-location'),
+                image: btn.getAttribute('data-img'),
+                savedAt: serverTimestamp()
+            });
+            
+            // เปลี่ยนสีปุ่มให้รู้ว่าเซฟแล้ว
+            btn.style.color = savedThemeColor;
+            alert("🔖 บันทึกกิจกรรมนี้แล้ว! ไปดูได้ที่หน้า 'บันทึก' ครับ");
+        } catch (error) {
+            console.error("เซฟไม่สำเร็จ:", error);
             alert("อ๊ะ! ระบบขัดข้องเล็กน้อย");
         }
     }

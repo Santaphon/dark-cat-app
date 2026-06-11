@@ -5,51 +5,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dark CAT - Profile</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; }
         body { background-color: #000000; color: #f5f5f5; font-family: 'Poppins', sans-serif; margin: 0; display: flex; }
         
-        /* แถบเมนูด้านซ้าย (เหมือนหน้า Dashboard) */
-        .sidebar { width: 244px; height: 100vh; position: fixed; border-right: 1px solid #262626; padding: 20px 12px; display: flex; flex-direction: column; }
-        .logo-text { font-size: 1.5rem; font-weight: 600; padding: 10px 12px; margin-bottom: 20px; letter-spacing: 2px; }
-        .nav-item { display: flex; align-items: center; padding: 12px; border-radius: 8px; color: white; text-decoration: none; font-size: 1rem; margin-bottom: 5px; transition: background 0.2s; cursor: pointer; }
-        .nav-item:hover { background-color: #1a1a1a; }
-        .nav-icon { font-size: 1.5rem; margin-right: 15px; width: 24px; text-align: center; }
+        /* 🌟 แถบเมนูด้านซ้าย (เหมือนหน้าอื่นๆ) */
+        .sidebar { width: 244px; height: 100vh; position: fixed; border-right: 1px solid #262626; padding: 20px 12px; display: flex; flex-direction: column; z-index: 10; background: #000; }
+        .nav-item { display: flex; align-items: center; padding: 12px 18px; margin-bottom: 12px; background: #0d0d0d; border: 1px solid #ec4899; border-radius: 25px; color: #ec4899; text-decoration: none; font-size: 0.95rem; transition: all 0.3s ease; box-shadow: 0 0 5px rgba(236, 72, 153, 0.05); cursor: pointer; }
+        .nav-item:hover { background: rgba(236, 72, 153, 0.1); box-shadow: 0 0 15px rgba(236, 72, 153, 0.3); transform: translateX(5px); }
+        .nav-item span:first-child { margin-right: 15px; font-size: 1.1rem; }
 
-        /* พื้นที่โปรไฟล์หลัก */
-        .main-content { margin-left: 244px; flex: 1; display: flex; justify-content: center; padding-top: 40px; }
-        .profile-container { width: 100%; max-width: 935px; padding: 0 20px; }
+        /* 🌟 พื้นที่โปรไฟล์หลัก */
+        .main-content { margin-left: 244px; flex: 1; display: flex; justify-content: center; padding-top: 0; min-height: 100vh; background: #050505; }
+        .profile-container { width: 100%; max-width: 800px; background: #000; border-left: 1px solid #262626; border-right: 1px solid #262626; min-height: 100vh; }
         
-        /* ส่วนหัวโปรไฟล์ (รูป + ข้อมูล) */
-        .profile-header { display: flex; margin-bottom: 44px; }
-        .profile-pic-section { flex: 1; display: flex; justify-content: center; margin-right: 30px; }
-        .profile-pic-wrapper { position: relative; width: 150px; height: 150px; }
-        .profile-pic { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 2px solid #262626; padding: 4px; cursor: pointer; }
+        /* ภาพหน้าปก (Cover) และ รูปโปรไฟล์ */
+        .cover-photo { width: 100%; height: 200px; background-color: #1a1a1a; background-image: url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=800&q=80'); background-size: cover; background-position: center; position: relative; }
+        .profile-pic-wrapper { position: absolute; bottom: -50px; left: 30px; }
+        .profile-pic { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid #000; background: #121212; }
         
-        .profile-info-section { flex: 2; display: flex; flex-direction: column; justify-content: center; }
-        .username-row { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }
-        .username-text { font-size: 1.25rem; font-weight: 400; margin: 0; }
-        .edit-btn { background-color: #363636; color: white; border: none; padding: 7px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.85rem; transition: background 0.2s; }
-        .edit-btn:hover { background-color: #262626; }
+        /* ข้อมูลโปรไฟล์ */
+        .profile-info-section { padding: 60px 30px 20px 30px; border-bottom: 1px solid #262626; }
+        .username-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        .username-text { font-size: 1.5rem; font-weight: 600; margin: 0; font-family: 'Kanit', sans-serif; color: white; }
         
-        .stats-row { display: flex; gap: 40px; margin-bottom: 20px; font-size: 1rem; }
-        .bio-row { font-size: 0.9rem; line-height: 1.5; }
+        .edit-btn { background-color: transparent; color: white; border: 1px solid #363636; padding: 8px 20px; border-radius: 20px; font-weight: 600; cursor: pointer; font-size: 0.85rem; transition: 0.2s; font-family: 'Kanit', sans-serif; }
+        .edit-btn:hover { background-color: #1a1a1a; border-color: #ec4899; color: #ec4899; }
         
-        /* เส้นแบ่งและไอคอนกริด */
-        .profile-tabs { border-top: 1px solid #262626; display: flex; justify-content: center; gap: 50px; }
-        .tab-item { padding: 15px 0; font-size: 0.75rem; font-weight: 600; letter-spacing: 1px; color: #a8a8a8; cursor: pointer; border-top: 1px solid transparent; display: flex; align-items: center; gap: 5px; }
-        .tab-item.active { color: white; border-top: 1px solid white; }
+        .bio-row { font-size: 0.9rem; line-height: 1.5; color: #f5f5f5; margin-bottom: 20px; font-family: 'Kanit', sans-serif; }
+        .stats-row { display: flex; gap: 30px; font-size: 0.95rem; color: #a8a8a8; }
+        .stats-row strong { color: white; }
+        
+        /* แท็บเมนู */
+        .profile-tabs { display: flex; justify-content: center; gap: 50px; border-bottom: 1px solid #262626; }
+        .tab-item { padding: 15px 0; font-size: 0.85rem; font-weight: 600; color: #a8a8a8; cursor: pointer; border-bottom: 2px solid transparent; display: flex; align-items: center; gap: 8px; transition: 0.2s; font-family: 'Kanit', sans-serif; }
+        .tab-item.active { color: #ec4899; border-bottom: 2px solid #ec4899; }
         
         /* ตารางรูปภาพ (Grid) */
-        .post-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 10px; }
-        .grid-item { aspect-ratio: 1 / 1; background-color: #121212; position: relative; overflow: hidden; }
+        .post-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 2px; }
+        .grid-item { aspect-ratio: 1 / 1; background-color: #121212; position: relative; overflow: hidden; cursor: pointer; }
         .grid-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
-        .grid-item:hover img { transform: scale(1.05); }
+        .grid-item:hover img { transform: scale(1.05); filter: brightness(0.8); }
 
-        /* ฟอร์มแก้ไขโปรไฟล์ (ซ่อนไว้ตอนแรก) */
-        #edit-form-section { display: none; background: #121212; padding: 20px; border-radius: 8px; border: 1px solid #262626; margin-bottom: 30px; }
-        .edit-input { width: 100%; background: #000; border: 1px solid #363636; color: white; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-family: 'Poppins', sans-serif; }
-        .save-btn { background: #ec4899; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        /* Modal แก้ไขโปรไฟล์ */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(5px); }
+        .modal-content { background: #121212; padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; border: 1px solid #262626; font-family: 'Kanit', sans-serif; }
+        .edit-input { width: 100%; padding: 12px; background: #000; border: 1px solid #363636; color: white; border-radius: 8px; outline: none; margin-bottom: 15px; font-family: 'Kanit', sans-serif; }
+        .edit-input:focus { border-color: #ec4899; }
     </style>
 </head>
 <body>
@@ -58,107 +61,91 @@
         <div style="padding: 10px 12px; margin-bottom: 20px; text-align: center;">
             <img src="logo.png.png" alt="DARK CAT" style="width: 100%; max-width: 160px; filter: drop-shadow(0px 0px 8px rgba(236, 72, 153, 0.4));">
         </div>
-        <a href="dashboard.html" class="nav-item" style="text-decoration: none;">
-            <span class="nav-icon">🏠</span> หน้าหลัก
-        </a>
-        <a href="chat.html" class="nav-item" style="text-decoration: none;">
-            <span class="nav-icon">💬</span> ข้อความ
-        </a>
-        <a href="profile.html" class="nav-item" style="text-decoration: none; font-weight: bold;">
-            <span class="nav-icon">👤</span> โปรไฟล์
-        </a>
-        <div style="flex: 1;"></div>
-        <div class="nav-item" id="logout-btn">
-            <span class="nav-icon">🚪</span> ออกจากระบบ
-        </div>
+        <a href="dashboard.html" class="nav-item"><span>🏠</span> หน้าหลัก</a>
+        <a href="chat.html" class="nav-item"><span>💬</span> ข้อความ</a>
+        <a href="notifications.html" class="nav-item"><span>💖</span> การแจ้งเตือน</a>
+        <a href="profile.html" class="nav-item" style="background: rgba(236, 72, 153, 0.2); box-shadow: 0 0 15px rgba(236, 72, 153, 0.4);"><span>👤</span> โปรไฟล์</a>
+        <a href="groups.html" class="nav-item"><span>👥</span> กลุ่ม</a>
+        <a href="events.html" class="nav-item"><span>📅</span> กิจกรรม</a>
+        <a href="saved.html" class="nav-item"><span>🔖</span> บันทึก</a>
+        <a href="settings.html" class="nav-item"><span>⚙️</span> ตั้งค่า</a>
     </nav>
 
     <main class="main-content">
         <div class="profile-container">
             
-            <header class="profile-header">
-                <div class="profile-pic-section">
-                    <label for="profile-upload" style="cursor: pointer;">
-                        <img id="profile-img" class="profile-pic" src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Black%20Cat.png" alt="Profile">
-                    </label>
-                    <input type="file" id="profile-upload" accept="image/*" style="display: none;">
+            <div class="cover-photo">
+                <div class="profile-pic-wrapper">
+                    <img id="profile-img" class="profile-pic" src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Black%20Cat.png" alt="Profile">
+                </div>
+            </div>
+            
+            <div class="profile-info-section">
+                <div class="username-row">
+                    <div>
+                        <h2 class="username-text" id="display-name">กำลังโหลด...</h2>
+                        <span id="user-email" style="color: #ec4899; font-size: 0.85rem;">@loading</span>
+                    </div>
+                    <button id="open-edit-modal-btn" class="edit-btn">แก้ไขโปรไฟล์</button>
                 </div>
                 
-                <div class="profile-info-section">
-                    <div class="username-row">
-                        <h2 class="username-text" id="display-name">กำลังโหลด...</h2>
-                        <button id="edit-profile-btn" style="background: #262626; color: #fff; border: 1px solid #ec4899; padding: 6px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.85rem; margin-left: 15px; transition: 0.2s;">✏️ แก้ไขโปรไฟล์</button>
-                    </div>
-                    <div class="stats-row">
-                        <span><strong id="post-count">0</strong> โพสต์</span>
-                        <span>ผู้ติดตาม <strong>287</strong> คน</span>
-                        <span>กำลังติดตาม <strong>387</strong> คน</span>
-                    </div>
-                    <div class="bio-row">
-                        <strong id="user-email" style="display: block; margin-bottom: 5px; color: #a8a8a8;">email@example.com</strong>
-                        <span id="display-bio">...</span>
-                    </div>
+                <div class="bio-row" id="display-bio">
+                    ยินดีต้อนรับสู่โลกของฉัน! 🐾
                 </div>
-            </header>
-
-            <div id="edit-form-section">
-                <h3 style="margin-top: 0; font-size: 1rem;">แก้ไขข้อมูลส่วนตัว</h3>
-                <input type="text" id="profile-name" class="edit-input" placeholder="ชื่อ / นามแฝง">
-                <textarea id="profile-bio" class="edit-input" placeholder="สถานะ / คำคม" rows="3"></textarea>
-                <button id="edit-profile-btn" style="background: #262626; color: white; border: 1px solid #363636; padding: 6px 15px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.85rem; margin-top: 10px;">✏️ แก้ไขโปรไฟล์</button>
-                <button id="save-profile-btn" class="save-btn">บันทึกข้อมูล</button>
-                <button id="cancel-edit-btn" style="background: transparent; color: white; border: none; margin-left: 10px; cursor: pointer;">ยกเลิก</button>
+                
+                <div class="stats-row">
+                    <span><strong id="post-count">0</strong> โพสต์</span>
+                    <span><strong>1.2K</strong> ผู้ติดตาม</span>
+                    <span><strong>350</strong> กำลังติดตาม</span>
+                </div>
             </div>
 
             <div class="profile-tabs">
-                <div class="tab-item active">
-                    <span>▦</span> โพสต์
-                </div>
-                <div class="tab-item">
-                    <span>🔖</span> บันทึกไว้
-                </div>
+                <div class="tab-item active"><span>▦</span> โพสต์ของฉัน</div>
             </div>
 
             <div class="post-grid" id="profile-post-grid">
-                <div class="grid-item">
-                    <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=500&auto=format&fit=crop" alt="Post">
+                <div style="grid-column: span 3; text-align: center; color: #a8a8a8; padding: 40px; font-family: 'Kanit', sans-serif;">
+                    กำลังค้นหาโพสต์ของคุณ...
                 </div>
-                <div class="grid-item">
-                    <img src="https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=500&auto=format&fit=crop" alt="Post">
-                </div>
-                </div>
+            </div>
 
         </div>
     </main>
-<div id="edit-profile-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 1000; font-family: sans-serif;">
-    <div style="background: #121212; padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; border: 1px solid #262626;">
-        <h3 style="margin-top: 0; color: #fff; margin-bottom: 20px;">แก้ไขโปรไฟล์ ✏️</h3>
-        
-        <div style="text-align: center; margin-bottom: 20px;">
-            <label style="cursor: pointer; display: inline-block;">
-                <img id="edit-preview-img" src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Black%20Cat.png" style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 2px solid #ec4899; display: block; margin: 0 auto 8px;">
-                <span style="color: #0095f6; font-size: 0.85rem; font-weight: 600;">เปลี่ยนรูปโปรไฟล์</span>
-                <input type="file" id="edit-profile-pic-input" accept="image/*" style="display: none;">
-            </label>
-        </div>
 
-        <div style="margin-bottom: 15px;">
+    <div id="edit-profile-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="margin-top: 0; color: #fff; margin-bottom: 20px;">แก้ไขโปรไฟล์ ✏️</h3>
+            
+            <div style="display: flex; justify-content: center; gap: 30px; margin-bottom: 25px; align-items: center;">
+                <label style="cursor: pointer; text-align: center;">
+                    <img id="edit-preview-img" src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Black%20Cat.png" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #ec4899; display: block; margin: 0 auto 8px;">
+                    <span style="color: #ec4899; font-size: 0.8rem; font-weight: 600;">✨ รูปโปรไฟล์</span>
+                    <input type="file" id="edit-profile-pic-input" accept="image/*" style="display: none;">
+                </label>
+
+                <label style="cursor: pointer; text-align: center;">
+                    <div id="edit-preview-cover" style="width: 130px; height: 75px; border-radius: 8px; background: #1a1a1a; border: 2px solid #ec4899; background-size: cover; background-position: center; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 0.8rem;">
+                        ไม่มีภาพ
+                    </div>
+                    <span style="color: #ec4899; font-size: 0.8rem; font-weight: 600;">🖼️ ภาพหน้าปก</span>
+                    <input type="file" id="edit-cover-pic-input" accept="image/*" style="display: none;">
+                </label>
+            </div>
+
             <label style="color: #a8a8a8; font-size: 0.85rem; display: block; margin-bottom: 5px;">ชื่อผู้ใช้งาน</label>
-            <input type="text" id="edit-name-input" placeholder="พิมพ์ชื่อใหม่ของคุณ..." style="width: 100%; padding: 10px; background: #000; border: 1px solid #262626; color: #fff; border-radius: 8px; outline: none; font-size: 0.9rem;">
-        </div>
+            <input type="text" id="edit-name-input" class="edit-input" placeholder="พิมพ์ชื่อใหม่ของคุณ...">
 
-        <div style="margin-bottom: 25px;">
-            <label style="color: #a8a8a8; font-size: 0.85rem; display: block; margin-bottom: 5px;">Bio (คำอธิบายตัวเอง)</label>
-            <textarea id="edit-bio-input" rows="3" placeholder="เขียนอะไรเท่ๆ หน่อย..." style="width: 100%; padding: 10px; background: #000; border: 1px solid #262626; color: #fff; border-radius: 8px; outline: none; resize: none; font-size: 0.9rem; font-family: sans-serif;"></textarea>
-        </div>
+            <label style="color: #a8a8a8; font-size: 0.85rem; display: block; margin-bottom: 5px;">คำอธิบายตัวเอง (Bio)</label>
+            <textarea id="edit-bio-input" rows="3" class="edit-input" style="resize: none;" placeholder="เขียนอะไรเท่ๆ หน่อย..."></textarea>
 
-        <div style="display: flex; gap: 10px; justify-content: flex-end;">
-            <button id="close-edit-modal-btn" style="background: #262626; color: #fff; border: none; padding: 8px 18px; border-radius: 8px; cursor: pointer; font-size: 0.85rem;">ยกเลิก</button>
-            <button id="save-profile-btn" style="background: #ec4899; color: #fff; border: none; padding: 8px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">บันทึก</button>
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px;">
+                <button id="close-edit-modal-btn" style="background: #262626; color: #fff; border: none; padding: 8px 18px; border-radius: 8px; cursor: pointer;">ยกเลิก</button>
+                <button id="save-profile-btn" style="background: #ec4899; color: #fff; border: none; padding: 8px 18px; border-radius: 8px; cursor: pointer; font-weight: bold;">บันทึก</button>
+            </div>
         </div>
     </div>
-</div>
+
     <script type="module" src="profile.js"></script>
-    
 </body>
 </html>

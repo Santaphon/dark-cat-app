@@ -1,62 +1,63 @@
-// ==========================================
-// 1. นำเข้า Firebase และตั้งค่า (Import & Config)
-// ==========================================
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, collection, getDocs, doc, query, orderBy, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+import { getFirestore, collection, getDocs, addDoc, serverTimestamp, query, orderBy, onSnapshot, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-// 🔴🔴🔴 ก๊อปปี้ firebaseConfig ของคุณมาทับตรงนี้ให้ครบถ้วนนะครับ! 🔴🔴🔴
 const firebaseConfig = {
-  apiKey: "AIzaSyBjXONUBgiJ9iys--Rk_pJwKtWu3EnTn9o",
-  authDomain: "dark-cat-d4c19.firebaseapp.com",
-  projectId: "dark-cat-d4c19",
-  storageBucket: "dark-cat-d4c19.firebasestorage.app",
-  messagingSenderId: "417221227867",
-  appId: "1:417221227867:web:6b75faa273314c9a5ed67e",
-  measurementId: "G-65CLM2SJ46"
+    apiKey: "AIzaSyBjXONUBgiJ9iys--Rk_pJwKtWu3EnTn9o",
+    authDomain: "dark-cat-d4c19.firebaseapp.com",
+    projectId: "dark-cat-d4c19",
+    storageBucket: "dark-cat-d4c19.firebasestorage.app",
+    messagingSenderId: "417221227867",
+    appId: "1:417221227867:web:6b75faa273314c9a5ed67e",
+    measurementId: "G-65CLM2SJ46"
 };
-
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-let currentUserUid = null;
-let currentChatPartnerId = null; 
-let unsubscribeChat = null; // ตัวแปรสำหรับหยุดดึงข้อความเวลาสลับคนคุย
+// ==========================================
+// 📌 ตัวแปรควบคุมหน้าจอแชท
+// ==========================================
+let currentUser = null;
+let currentChatPartnerId = null; // กำลังคุยกับใครอยู่
+let currentChatId = null;        // รหัสห้องแชท
+let unsubscribeMessages = null;  // ตัวยกเลิกเรดาร์ดักจับข้อความ (กันบั๊กข้อความเด้งซ้ำ)
 
-// ฟังก์ชันสร้าง "รหัสห้องแชทลับ" ระหว่างคน 2 คน
-function getChatId(uid1, uid2) {
-    return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
-}
+const savedThemeColor = localStorage.getItem('themeColor') || '#ec4899';
+
+// ตัวแปรเชื่อมต่อ UI
+const friendsListContainer = document.getElementById('chat-friends-list');
+const messagesContainer = document.getElementById('chat-messages-container');
+const messageInput = document.getElementById('message-input');
+const sendBtn = document.getElementById('send-msg-btn');
+const activeChatName = document.getElementById('active-chat-name');
+const activeChatAvatar = document.getElementById('active-chat-avatar');
+const activeChatStatus = document.getElementById('active-chat-status');
 
 // ==========================================
-// 2. เช็กสถานะล็อกอิน
+// 👤 1. ตรวจสอบผู้ใช้และโหลดรายชื่อเพื่อน
 // ==========================================
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        currentUserUid = user.uid;
-        loadChatFriends(); 
+        currentUser = user;
+        loadFriends();
     } else {
-        window.location.href = "index.html"; 
+        window.location.href = "index.html";
     }
 });
 
-// ==========================================
-// 3. ระบบดึงรายชื่อเพื่อน (ฝั่งซ้าย)
-// ==========================================
-async function loadChatFriends() {
-    const friendsListContainer = document.getElementById('chat-friends-list');
-    if (!friendsListContainer) return;
-
+async function loadFriends() {
+    friendsListContainer.innerHTML = '<p style="color: #a8a8a8; font-size: 0.85rem; text-align: center;">กำลังโหลดเพื่อน...</p>';
     try {
-        const friendsRef = collection(db, "users", currentUserUid, "friends");
+        // ดึงเพื่อนจาก subcollection "friends" ของเรา
+        const friendsRef = collection(db, "users", currentUser.uid, "friends");
         const snapshot = await getDocs(friendsRef);
 
-        friendsListContainer.innerHTML = ''; 
+        friendsListContainer.innerHTML = '';
 
         if (snapshot.empty) {
-            friendsListContainer.innerHTML = '<div style="text-align: center; color: #a8a8a8; margin-top: 20px;">ยังไม่มีเพื่อนเลย ลองไปเพิ่มเพื่อนที่หน้าหลักนะ 🔍</div>';
+            friendsListContainer.innerHTML = '<p style="color: #a8a8a8; font-size: 0.85rem; text-align: center;">คุณยังไม่มีเพื่อนเลย ลองไปเพิ่มเพื่อนในหน้าหลักนะ 😿</p>';
             return;
         }
 
@@ -64,143 +65,135 @@ async function loadChatFriends() {
             const friend = docSnap.data();
             const friendId = docSnap.id;
 
-            const friendEl = document.createElement('div');
-            friendEl.style.cssText = "display: flex; align-items: center; gap: 15px; padding: 15px; cursor: pointer; border-radius: 10px; transition: background 0.2s; border-bottom: 1px solid #1a1a1a;";
-            
-            friendEl.innerHTML = `
-                <img src="${friend.profilePic || 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Black%20Cat.png'}" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1px solid #262626;">
-                <div>
-                    <strong style="display: block; font-size: 0.95rem; color: #f5f5f5;">${friend.name}</strong>
-                    <span style="font-size: 0.75rem; color: #a8a8a8;">แตะเพื่อเริ่มแชท</span>
+            // สร้างปุ่มเพื่อนด้านขวา
+            const friendItem = document.createElement('div');
+            friendItem.className = 'friend-chat-item';
+            friendItem.innerHTML = `
+                <img src="${friend.profilePic || 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Black%20Cat.png'}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid #262626;">
+                <div style="flex: 1; min-width: 0;">
+                    <strong style="color: white; font-size: 0.9rem; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${friend.name}</strong>
+                    <span style="color: #a8a8a8; font-size: 0.75rem;">แตะเพื่อเริ่มแชท</span>
                 </div>
             `;
 
-            friendEl.addEventListener('mouseover', () => friendEl.style.background = '#1a1a1a');
-            friendEl.addEventListener('mouseout', () => friendEl.style.background = 'transparent');
+            // เมื่อกดเลือกเพื่อนคนนี้
+            friendItem.addEventListener('click', () => {
+                // ลบไฮไลท์คนเก่า ไฮไลท์คนใหม่
+                document.querySelectorAll('.friend-chat-item').forEach(el => el.classList.remove('active'));
+                friendItem.classList.add('active');
 
-            // เมื่อคลิกชื่อเพื่อน เปิดห้องแชท
-            friendEl.addEventListener('click', () => {
-                openChatRoom(friendId, friend.name, friend.profilePic);
+                // เปลี่ยนข้อมูลด้านบน (Header)
+                activeChatName.innerText = friend.name;
+                activeChatAvatar.src = friend.profilePic || 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Black%20Cat.png';
+                activeChatStatus.innerText = "กำลังพิมพ์... 💬"; // ลูกเล่นขำๆ
+
+                // เปิดห้องแชท
+                openChatRoom(friendId, friend.name);
             });
 
-            friendsListContainer.appendChild(friendEl);
+            friendsListContainer.appendChild(friendItem);
         });
+
     } catch (error) {
-        console.error("โหลดเพื่อนพัง:", error);
+        console.error("โหลดเพื่อนไม่สำเร็จ:", error);
+        friendsListContainer.innerHTML = '<p style="color: #ff4d4f; font-size: 0.85rem; text-align: center;">โหลดข้อมูลล้มเหลว</p>';
     }
 }
 
 // ==========================================
-// 4. ระบบเปิดห้องสนทนา และดึงข้อความ (Real-time)
+// 💬 2. ระบบเปิดห้องแชทและดักจับข้อความ (Real-time)
 // ==========================================
-function openChatRoom(friendId, friendName, friendPic) {
+function openChatRoom(friendId, friendName) {
     currentChatPartnerId = friendId;
-
-    document.getElementById('chat-header').style.display = 'flex';
-    document.getElementById('chat-input-area').style.display = 'block';
     
-    const placeholder = document.getElementById('chat-placeholder');
-    if (placeholder) placeholder.style.display = 'none';
+    // 🌟 เคล็ดลับวิชา: สร้างชื่อห้องแชทแบบพิเศษ! 
+    // โดยเอา UID ของเรากับเพื่อนมาต่อกัน (เรียงตามตัวอักษร) เพื่อให้ทั้งสองคนเข้ามาเจอห้องเดียวกันเสมอ
+    currentChatId = currentUser.uid < friendId ? `${currentUser.uid}_${friendId}` : `${friendId}_${currentUser.uid}`;
 
-    document.getElementById('chat-partner-name').textContent = friendName;
-    document.getElementById('chat-partner-img').src = friendPic || 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Black%20Cat.png';
+    // เปิดให้พิมพ์ข้อความได้
+    messageInput.disabled = false;
+    sendBtn.disabled = false;
+    messageInput.focus();
+    messagesContainer.innerHTML = '<p style="color: #a8a8a8; text-align: center; margin-top: auto; margin-bottom: auto;">กำลังโหลดข้อความเก่า...</p>';
 
-    const messagesContainer = document.getElementById('chat-messages');
-    messagesContainer.innerHTML = '<div style="text-align:center; color:#a8a8a8; margin-top:20px;">กำลังโหลดข้อความ... 💬</div>';
-
-    // สร้างรหัสห้องแชท
-    const chatId = getChatId(currentUserUid, friendId);
-    const messagesRef = collection(db, "chats", chatId, "messages");
-    const q = query(messagesRef, orderBy("timestamp", "asc"));
-
-    // ถ้าเคยดึงข้อความของคนอื่นอยู่ ให้หยุดดึงก่อน (ป้องกันข้อความตีกัน)
-    if (unsubscribeChat) {
-        unsubscribeChat();
+    // ถ้าเคยเปิดเรดาร์ห้องอื่นไว้ ให้ปิดก่อน (จะได้ไม่โหลดข้อความมั่วซั่ว)
+    if (unsubscribeMessages) {
+        unsubscribeMessages();
     }
 
-    // 🌟 พระเอกของเรา: onSnapshot ดึงข้อมูลแบบ Real-time
-    unsubscribeChat = onSnapshot(q, (snapshot) => {
-        messagesContainer.innerHTML = ''; 
+    // 📡 เปิดเรดาร์ onSnapshot ดักจับข้อความในห้องนี้
+    const messagesRef = collection(db, "chats", currentChatId, "messages");
+    const q = query(messagesRef, orderBy("createdAt", "asc")); // เรียงจากเก่าไปใหม่ (บนลงล่าง)
+
+    unsubscribeMessages = onSnapshot(q, (snapshot) => {
+        messagesContainer.innerHTML = ''; // ล้างข้อความเก่าทิ้งก่อนวาดใหม่
 
         if (snapshot.empty) {
-            messagesContainer.innerHTML = '<div style="text-align:center; color:#a8a8a8; margin-top:20px;">ทักทายเพื่อนของคุณเลย! 👋</div>';
+            messagesContainer.innerHTML = `
+                <div style="text-align: center; color: #a8a8a8; margin-top: auto; margin-bottom: auto; font-family: 'Kanit', sans-serif;">
+                    <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Cat%20with%20Wry%20Smile.png" style="width: 60px; margin-bottom: 10px;">
+                    <p>ยังไม่มีข้อความ... ทักทาย ${friendName} เลย!</p>
+                </div>
+            `;
             return;
         }
 
-        snapshot.forEach((docSnap) => {
-            const msg = docSnap.data();
-            const isMe = msg.senderId === currentUserUid; // เช็กว่าเราเป็นคนพิมพ์เองไหม
+        snapshot.forEach((doc) => {
+            const msg = doc.data();
+            const isMe = msg.senderId === currentUser.uid; // เช็กว่าเราส่งเองไหม
+            
+            // จัดฟอร์แมตเวลา
+            let timeStr = "กำลังส่ง...";
+            if (msg.createdAt) {
+                const dateObj = msg.createdAt.toDate();
+                timeStr = dateObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
+            }
 
-            const msgDiv = document.createElement('div');
-            // แต่งสีกล่องข้อความ: ของเราสีชมพูอยู่ขวา ของเพื่อนสีเทาอยู่ซ้าย
-            msgDiv.style.cssText = `
-                max-width: 65%;
-                padding: 10px 15px;
-                border-radius: 20px;
-                margin-bottom: 5px;
-                word-wrap: break-word;
-                font-size: 0.95rem;
-                ${isMe ? 
-                    'align-self: flex-end; background: #ec4899; color: white; border-bottom-right-radius: 5px;' : 
-                    'align-self: flex-start; background: #262626; color: #f5f5f5; border-bottom-left-radius: 5px;'
-                }
-            `;
-            msgDiv.textContent = msg.text;
-            messagesContainer.appendChild(msgDiv);
+            // สร้างลูกโป่งข้อความ
+            const msgEl = document.createElement('div');
+            msgEl.className = `message ${isMe ? 'sent' : 'received'}`;
+            // ถ้าเราส่งเอง ให้เปลี่ยนสีพื้นหลังเป็นสีธีมที่เซฟไว้
+            if (isMe) msgEl.style.background = savedThemeColor;
+
+            msgEl.innerHTML = `${msg.text} <span class="msg-time">${timeStr}</span>`;
+            messagesContainer.appendChild(msgEl);
         });
 
-        // เลื่อนหน้าจอลงไปล่างสุดอัตโนมัติเมื่อมีข้อความใหม่
+        // เลื่อนหน้าจอลงไปล่างสุดอัตโนมัติเวลามีข้อความใหม่
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     });
 }
 
 // ==========================================
-// 5. ระบบส่งข้อความ 🚀
+// 🚀 3. ระบบส่งข้อความ
 // ==========================================
-const sendBtn = document.getElementById('send-msg-btn');
-const chatInput = document.getElementById('chat-input');
-
 async function sendMessage() {
-    const text = chatInput.value.trim();
-    if (!text || !currentChatPartnerId) return; // ถ้าไม่ได้พิมพ์อะไรก็ไม่ต้องส่ง
+    const text = messageInput.value.trim();
+    if (!text || !currentChatId) return;
 
-    chatInput.value = ''; // ล้างช่องพิมพ์ทันทีให้ดูไว
-
-    const chatId = getChatId(currentUserUid, currentChatPartnerId);
-    const messagesRef = collection(db, "chats", chatId, "messages");
+    // เคลียร์ช่องพิมพ์ทันทีให้รู้สึกว่าลื่นไหล
+    messageInput.value = '';
+    messageInput.focus();
 
     try {
-        await addDoc(messagesRef, {
-            senderId: currentUserUid,
+        // สร้างเอกสารห้องแชทเผื่อไว้ (ถ้ายังไม่เคยมี) เพื่อไม่ให้ Firebase งงโครงสร้าง
+        await setDoc(doc(db, "chats", currentChatId), { lastUpdated: serverTimestamp() }, { merge: true });
+
+        // ยิงข้อความเข้า subcollection "messages"
+        await addDoc(collection(db, "chats", currentChatId, "messages"), {
+            senderId: currentUser.uid,
             text: text,
-            timestamp: serverTimestamp() // ใช้เวลาของเซิร์ฟเวอร์
+            createdAt: serverTimestamp()
         });
+
     } catch (error) {
-        console.error("ส่งข้อความพัง:", error);
+        console.error("ส่งข้อความพลาด:", error);
         alert("ส่งข้อความไม่สำเร็จครับ");
     }
 }
 
-// กดปุ่มส่ง
-if (sendBtn) {
-    sendBtn.addEventListener('click', sendMessage);
-}
-
-// กดปุ่ม Enter บนคีย์บอร์ดเพื่อส่งได้ด้วย
-if (chatInput) {
-    chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendMessage();
-    });
-}
-
-// ==========================================
-// 6. ระบบออกจากระบบ
-// ==========================================
-const logoutBtn = document.getElementById('logout-btn');
-if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-        signOut(auth).then(() => {
-            window.location.href = "index.html";
-        });
-    });
-}
+// ผูกระบบส่งข้อความเข้ากับปุ่มกดและปุ่ม Enter
+sendBtn.addEventListener('click', sendMessage);
+messageInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendMessage();
+});

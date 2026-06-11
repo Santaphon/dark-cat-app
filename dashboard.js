@@ -73,6 +73,28 @@ onAuthStateChanged(auth, async (user) => {
             hideLoadingScreen();
             loadFeedPosts(); 
             loadFriendsList();
+            // 🌟 เรดาร์ตรวจจับการแจ้งเตือนใหม่ (Unread Badge)
+            const notifBadge = document.getElementById('nav-notif-badge');
+            if (notifBadge) {
+                // ดึงการแจ้งเตือนทั้งหมดที่เป็นของเรา
+                const notifQuery = query(collection(db, "notifications"), where("receiverId", "==", currentUserUid));
+                onSnapshot(notifQuery, (snapshot) => {
+                    let unreadCount = 0;
+                    
+                    // ให้นับเฉพาะอันที่ read เป็น false (ยังไม่ได้อ่าน)
+                    snapshot.forEach(docSnap => {
+                        if (docSnap.data().read === false) unreadCount++;
+                    });
+                    
+                    // ถ้ามีแจ้งเตือนใหม่ ให้โชว์จุดแดงพร้อมตัวเลข
+                    if (unreadCount > 0) {
+                        notifBadge.textContent = unreadCount;
+                        notifBadge.style.display = 'block';
+                    } else {
+                        notifBadge.style.display = 'none';
+                    }
+                });
+            }
         } catch (error) {
             console.error("โหลดข้อมูลพัง:", error);
             hideLoadingScreen();
@@ -235,12 +257,15 @@ async function loadFeedPosts() {
         
         postElement.className = 'post';
         postElement.innerHTML = `
-                <div class="post-header" style="display: flex; align-items: center;">
-                    <a href="profile.html?uid=${post.uid}" style="text-decoration: none; display: flex; align-items: center; gap: 10px; color: inherit;">
-                        <img src="${profilePic}" alt="Profile" style="cursor: pointer;">
-                        <span class="username" style="cursor: pointer;">${userData.name}</span>
-                    </a>
-                    <span class="time" style="color: #a8a8a8; font-size: 0.8rem; margin-left: 8px;">• ${timeText}</span>
+                <div class="post-header" style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center;">
+                        <a href="profile.html?uid=${post.uid}" style="text-decoration: none; display: flex; align-items: center; gap: 10px; color: inherit;">
+                            <img src="${profilePic}" alt="Profile" style="cursor: pointer; width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
+                            <span class="username" style="cursor: pointer; font-weight: bold;">${userData.name}</span>
+                        </a>
+                        <span class="time" style="color: #a8a8a8; font-size: 0.8rem; margin-left: 8px;">• ${timeText}</span>
+                    </div>
+                    <span class="save-post-btn" data-id="${post.id}" data-author="${userData.name}" data-avatar="${profilePic}" data-content="${post.caption || ''}" data-image="${post.imageUrl || ''}" style="color: #a8a8a8; cursor: pointer; font-size: 1.2rem; transition: 0.2s;" onmouseover="this.style.color='#ec4899'" onmouseout="this.style.color='#a8a8a8'" title="บันทึกโพสต์">🔖</span>
                 </div>
                 
                 <div class="post-image" style="background: #121212;">
@@ -585,3 +610,34 @@ if (logoutBtn) {
         }).catch((error) => console.error("ออกจากระบบไม่ได้:", error));
     });
 }
+// ==========================================
+// 🔖 6. ระบบดักจับการกดปุ่ม "บันทึกโพสต์" (Saved)
+// ==========================================
+document.addEventListener('click', async (e) => {
+    if (e.target && e.target.classList.contains('save-post-btn')) {
+        const btn = e.target;
+        if (!auth.currentUser) return alert("กรุณาล็อกอินก่อนครับ!");
+
+        try {
+            // สั่งบันทึกข้อมูลโพสต์นั้นๆ ลงโฟลเดอร์ saves
+            await addDoc(collection(db, "saves"), {
+                userId: auth.currentUser.uid,
+                type: 'post',
+                postId: btn.getAttribute('data-id'),
+                author: btn.getAttribute('data-author'),
+                avatar: btn.getAttribute('data-avatar'),
+                time: "บันทึกล่าสุด", 
+                content: btn.getAttribute('data-content'),
+                image: btn.getAttribute('data-image'),
+                savedAt: serverTimestamp()
+            });
+            
+            // ทำให้ปุ่มกลายเป็นสีชมพูเพื่อบอกว่าเซฟแล้ว
+            btn.style.color = '#ec4899'; 
+            alert("🔖 บันทึกโพสต์นี้ลงในคลังของคุณแล้ว!");
+        } catch (error) {
+            console.error("เซฟโพสต์ไม่สำเร็จ:", error);
+            alert("อ๊ะ! ระบบขัดข้องเล็กน้อย");
+        }
+    }
+});

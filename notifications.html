@@ -3,63 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DARK CAT - การแจ้งเตือน</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <title>Dark CAT - Notifications</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        /* จัดโครงสร้างหลัก */
         * { box-sizing: border-box; }
-        body { 
-            margin: 0; padding: 0; display: flex; height: 100vh; overflow: hidden; 
-            background-color: #000; color: #f5f5f5; font-family: 'Poppins', sans-serif; 
-        }
+        body { background-color: #000000; color: #f5f5f5; font-family: 'Poppins', sans-serif; margin: 0; display: flex; }
         
-        /* แต่งเมนู Sidebar ให้เหมือนหน้าอื่นๆ */
-        .sidebar { 
-            width: 250px; background: #000; border-right: 1px solid #262626; 
-            display: flex; flex-direction: column; padding: 20px; 
-        }
-        .sidebar .logo { font-size: 1.5rem; font-weight: 800; margin-bottom: 40px; letter-spacing: 1px; }
-        .sidebar .logo span { color: #ec4899; }
-        .sidebar .nav-item { 
-            display: flex; align-items: center; gap: 15px; padding: 12px 15px; 
-            color: #f5f5f5; text-decoration: none; font-size: 1.05rem; 
-            border-radius: 10px; margin-bottom: 5px; transition: background 0.2s; 
-        }
-        .sidebar .nav-item:hover { background: #121212; }
+        /* 🌟 เมนูด้านซ้าย */
+        .sidebar { width: 244px; height: 100vh; position: fixed; border-right: 1px solid #262626; padding: 20px 12px; display: flex; flex-direction: column; z-index: 10; background: #000;}
+        .nav-item { display: flex; align-items: center; padding: 12px 18px; margin-bottom: 12px; background: #0d0d0d; border: 1px solid #ec4899; border-radius: 25px; color: #ec4899; text-decoration: none; font-size: 0.95rem; transition: all 0.3s ease; cursor: pointer; }
+        .nav-item:hover { background: rgba(236, 72, 153, 0.1); transform: translateX(5px); }
+        .nav-item span:first-child { margin-right: 15px; font-size: 1.1rem; }
         
-        /* แต่งกล่องแจ้งเตือน */
-        .notify-item { padding: 15px; border-bottom: 1px solid #262626; display: flex; align-items: center; gap: 15px; border-radius: 10px;}
-        .notify-item:hover { background: #121212; cursor: pointer; }
+        /* 🌟 พื้นที่ตรงกลาง */
+        .main-content { margin-left: 244px; flex: 1; display: flex; justify-content: center; padding-top: 30px; min-height: 100vh; background: #050505;}
+        .notify-container { width: 100%; max-width: 600px; padding: 0 20px; }
         
-        /* สกอร์บาร์ */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #363636; border-radius: 10px; }
+        /* 🌟 ดีไซน์กล่องแจ้งเตือน */
+        .notify-item { background: #0d0d0d; border: 1px solid #262626; padding: 15px 20px; border-radius: 12px; display: flex; align-items: center; gap: 15px; margin-bottom: 12px; transition: 0.2s; font-family: 'Kanit', sans-serif;}
+        .notify-item:hover { border-color: #ec4899; transform: translateY(-2px); }
+        .notify-icon { font-size: 1.5rem; background: #1a1a1a; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #262626;}
+        .notify-text { flex: 1; font-size: 0.95rem; color: #f5f5f5; line-height: 1.4; }
+        .notify-time { font-size: 0.75rem; color: #a8a8a8; margin-top: 3px; }
     </style>
 </head>
 <body>
-
     <nav class="sidebar">
-            <div style="padding: 10px 12px; margin-bottom: 20px; text-align: center;">
-                <img src="logo.png.png" alt="DARK CAT" style="width: 100%; max-width: 160px; filter: drop-shadow(0px 0px 8px rgba(236, 72, 153, 0.4));">
-            </div>
-        <a href="dashboard.html" class="nav-item">🏠 หน้าหลัก</a>
-        <a href="chat.html" class="nav-item">💬 ข้อความ</a>
-        <a href="notifications.html" class="nav-item" style="color: #ec4899; font-weight: bold;">❤️ การแจ้งเตือน</a>
-        <a href="profile.html" class="nav-item">👤 โปรไฟล์</a>
-        
-        <div style="margin-top: auto;">
-            <a href="#" class="nav-item" id="logout-btn">🚪 ออกจากระบบ</a>
+        <div style="padding: 10px 12px; margin-bottom: 20px; text-align: center;">
+            <img src="logo.png.png" alt="DARK CAT" style="width: 100%; max-width: 160px; filter: drop-shadow(0px 0px 8px rgba(236, 72, 153, 0.4));">
         </div>
+        <a href="dashboard.html" class="nav-item"><span>🏠</span> หน้าหลัก</a>
+        <a href="chat.html" class="nav-item"><span>💬</span> ข้อความ</a>
+        <a href="notifications.html" class="nav-item" style="background: rgba(236, 72, 153, 0.2); box-shadow: 0 0 15px rgba(236, 72, 153, 0.4);"><span>💖</span> การแจ้งเตือน</a>
+        <a href="profile.html" class="nav-item"><span>👤</span> โปรไฟล์</a>
+        <a href="groups.html" class="nav-item"><span>👥</span> กลุ่ม</a>
+        <a href="events.html" class="nav-item"><span>📅</span> กิจกรรม</a>
+        <a href="saved.html" class="nav-item"><span>🔖</span> บันทึก</a>
+        <a href="settings.html" class="nav-item"><span>⚙️</span> ตั้งค่า</a>
     </nav>
 
-    <main style="flex: 1; padding: 30px; background: #0a0a0a; overflow-y: auto;">
-        <h2 style="margin-top: 0; margin-bottom: 20px; font-size: 1.5rem; border-bottom: 1px solid #262626; padding-bottom: 15px;">การแจ้งเตือน</h2>
-        
-        <div id="notifications-list" style="max-width: 600px;">
-            <div style="color: #a8a8a8; text-align: center; padding: 20px;">กำลังโหลดแจ้งเตือน...</div>
+    <main class="main-content">
+        <div class="notify-container">
+            <h2 style="margin-top: 0; color: white; font-family: 'Kanit', sans-serif; border-bottom: 1px solid #262626; padding-bottom: 15px; margin-bottom: 20px;">💖 การแจ้งเตือน</h2>
+            
+            <div id="notifications-list">
+                <p style="color: #a8a8a8; text-align: center; font-family: 'Kanit', sans-serif;">กำลังค้นหาการแจ้งเตือน... 🐾</p>
+            </div>
+            
         </div>
     </main>
-
+    
     <script type="module" src="notifications.js"></script>
 </body>
 </html>

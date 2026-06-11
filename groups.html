@@ -201,7 +201,7 @@
 
             <div style="background: #0d0d0d; border: 1px solid #262626; border-radius: 12px; padding: 10px 15px; display: flex; align-items: center;">
                 <span>🔍</span>
-                <input type="text" placeholder="ค้นหากลุ่มที่สนใจ..." style="background: transparent; border: none; color: white; outline: none; width: 100%; margin-left: 10px; font-family: 'Kanit', sans-serif;">
+                <input type="text" id="search-group-input" placeholder="ค้นหากลุ่มที่สนใจ..." style="background: transparent; border: none; color: white; outline: none; width: 100%; margin-left: 10px; font-family: 'Kanit', sans-serif;">
             </div>
 
             <h3 style="color: #a8a8a8; font-size: 0.9rem; margin-top: 10px; margin-bottom: 0;">กลุ่มแนะนำสำหรับคุณ</h3>
@@ -310,8 +310,10 @@
             </div>
             
             <div style="padding: 20px; display: flex; flex-direction: column; gap: 15px;">
-                <input type="text" id="new-group-name" placeholder="ชื่อกลุ่มของคุณ..." style="background: #000; border: 1px solid #363636; color: white; padding: 10px; border-radius: 8px; outline: none; font-family: 'Kanit', sans-serif;">
+               <input type="text" id="new-group-name" placeholder="ชื่อกลุ่มของคุณ..." style="background: #000; border: 1px solid #363636; color: white; padding: 10px; border-radius: 8px; outline: none; font-family: 'Kanit', sans-serif;">
                 
+                <label style="color: #a8a8a8; font-size: 0.85rem; font-family: 'Kanit', sans-serif; margin-bottom: -10px;">ลิงก์รูปภาพกลุ่ม (ไม่บังคับ):</label>
+                <input type="text" id="new-group-image-url" placeholder="วาง URL รูปภาพจากอินเทอร์เน็ตที่นี่..." style="background: #000; border: 1px solid #363636; color: white; padding: 10px; border-radius: 8px; outline: none; font-family: 'Kanit', sans-serif;">
                 <textarea id="new-group-desc" placeholder="คำอธิบายกลุ่มสั้นๆ..." rows="3" style="background: #000; border: 1px solid #363636; color: white; padding: 10px; border-radius: 8px; outline: none; font-family: 'Kanit', sans-serif; resize: none;"></textarea>
                 
                 <button id="submit-new-group-btn" style="background: #ec4899; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; font-family: 'Kanit', sans-serif;">

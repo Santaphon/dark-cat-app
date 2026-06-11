@@ -190,47 +190,44 @@
     <main class="main-content">
     
         
-        <div style="width: 100%; max-width: 470px; margin-right: 64px; display: flex; flex-direction: column;">
+        <div style="width: 100%; max-width: 500px; margin-right: 64px; display: flex; flex-direction: column; gap: 20px;">
             
-            <div id="create-nav-btn" style="background: #0d0d0d; border: 1px solid #262626; border-radius: 15px; padding: 15px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; cursor: pointer; transition: 0.3s;">
-                <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Black%20Cat.png" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid #ec4899; object-fit: cover;">
-                <div style="flex: 1; background: #1a1a1a; border-radius: 25px; padding: 10px 15px; color: #a8a8a8; font-size: 0.9rem;">
-                    คุณกำลังคิดอะไรอยู่?
-                </div>
-                <button style="background: #ec4899; color: white; border: none; padding: 8px 20px; border-radius: 20px; font-weight: bold; cursor: pointer;">
-                    โพสต์
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #262626; padding-bottom: 15px; margin-top: 10px;">
+                <h2 style="color: white; margin: 0; font-size: 1.5rem;">👥 ค้นพบกลุ่ม</h2>
+                <button id="create-group-btn" style="background: #ec4899; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s;" onmouseover="this.style.background='#db2777'" onmouseout="this.style.background='#ec4899'">
+                    + สร้างกลุ่มใหม่
                 </button>
             </div>
-            
-            <div style="display: flex; gap: 20px; margin-bottom: 20px; border-bottom: 1px solid #262626; padding-bottom: 10px; color: #a8a8a8; font-size: 0.9rem;">
-                <span style="color: #ec4899; border-bottom: 2px solid #ec4899; padding-bottom: 10px; font-weight: bold; cursor: pointer;">สำหรับคุณ</span>
-                <span style="cursor: pointer;">กำลังติดตาม</span>
-                <span style="cursor: pointer;">ยอดนิยม</span>
-                <span style="cursor: pointer;">ล่าสุด</span>
+
+            <div style="background: #0d0d0d; border: 1px solid #262626; border-radius: 12px; padding: 10px 15px; display: flex; align-items: center;">
+                <span>🔍</span>
+                <input type="text" placeholder="ค้นหากลุ่มที่สนใจ..." style="background: transparent; border: none; color: white; outline: none; width: 100%; margin-left: 10px; font-family: 'Kanit', sans-serif;">
             </div>
 
-            <div class="feed" style="margin-right: 0; max-width: 100%;">
-                <article class="post">
-                    <div class="post-header">
-                        <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Black%20Cat.png" alt="Admin">
-                        <span class="username">ระบบ DARK CAT</span>
-                        <span class="time">• 1 วัน</span>
-                    </div>
-                    <div class="post-image" style="background: linear-gradient(135deg, #1f2937, #111827);">
-                        <div style="text-align: center; padding: 20px;">
-                            <h2 style="color: #ec4899; margin-bottom: 10px;">V2.0 is Live! 🚀</h2>
-                            <p style="color: #a8a8a8; font-size: 0.9rem;">หน้าตาแอปพลิเคชันแบบใหม่สไตล์ Social Media</p>
-                        </div>
-                    </div>
-                    <div class="post-actions">
-                        <span>❤️</span> <span>💬</span> <span>📤</span>
-                    </div>
-                    <div class="post-caption">
-                        <strong>ระบบ DARK CAT</strong> ยินดีต้อนรับสู่ศูนย์กลางคอมมูนิตี้แบบใหม่! ตอนนี้เรามีหน้าตาเหมือนแอปพลิเคชันระดับโลกแล้ว ลองเปลี่ยนรูปโปรไฟล์ด้านขวา หรือกดเข้าห้องข้อความที่เมนูด้านซ้ายได้เลยครับ
-                    </div>
-                </article>
+            <h3 style="color: #a8a8a8; font-size: 0.9rem; margin-top: 10px; margin-bottom: 0;">กลุ่มแนะนำสำหรับคุณ</h3>
+
+            <div id="groups-list-container" style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+                <p style="color: #a8a8a8; text-align: center; font-family: 'Kanit', sans-serif;">กำลังโหลดกลุ่มจากฐานข้อมูล...</p>
+            </div>
+
+            <div style="background: #0d0d0d; border: 1px solid #262626; border-radius: 12px; padding: 15px; display: flex; align-items: center; gap: 15px; transition: 0.3s; cursor: pointer;" onmouseover="this.style.borderColor='#ec4899'; this.style.transform='translateY(-2px)';" onmouseout="this.style.borderColor='#262626'; this.style.transform='translateY(0)';">
+                <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Laptop.png" style="width: 50px; height: 50px; border-radius: 10px; background: #1a1a1a; padding: 5px;">
+                <div style="flex: 1;">
+                    <h3 style="color: white; margin: 0 0 5px 0; font-size: 1rem;">สมาคมโปรแกรมเมอร์ขอบตาดำ</h3>
+                    <p style="color: #a8a8a8; margin: 0; font-size: 0.8rem;">สมาชิก 12.5K คน • โพสต์ใหม่ 50+ / วัน</p>
                 </div>
-            
+                <button style="background: #1a1a1a; color: #ec4899; border: 1px solid #ec4899; padding: 5px 15px; border-radius: 6px; cursor: pointer; font-weight: bold;">เข้าร่วม</button>
+            </div>
+
+            <div style="background: #0d0d0d; border: 1px solid #262626; border-radius: 12px; padding: 15px; display: flex; align-items: center; gap: 15px; transition: 0.3s; cursor: pointer;" onmouseover="this.style.borderColor='#ec4899'; this.style.transform='translateY(-2px)';" onmouseout="this.style.borderColor='#262626'; this.style.transform='translateY(0)';">
+                 <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Activities/Video%20Game.png" style="width: 50px; height: 50px; border-radius: 10px; background: #1a1a1a; padding: 5px;">
+                <div style="flex: 1;">
+                    <h3 style="color: white; margin: 0 0 5px 0; font-size: 1rem;">Dark Cat Gaming Center</h3>
+                    <p style="color: #a8a8a8; margin: 0; font-size: 0.8rem;">สมาชิก 8.2K คน • หาคนแบกแรงค์</p>
+                </div>
+                <button style="background: #1a1a1a; color: #ec4899; border: 1px solid #ec4899; padding: 5px 15px; border-radius: 6px; cursor: pointer; font-weight: bold;">เข้าร่วม</button>
+            </div>
+
         </div>
 
         <aside class="right-panel" style="width: 319px; padding: 20px 0;">
@@ -304,7 +301,26 @@
             }
         });
     </script>
-    <script type="module" src="dashboard.js"></script>
+    <div id="create-group-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
+        <div style="background: #121212; width: 400px; border-radius: 12px; border: 1px solid #262626; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            
+            <div style="padding: 15px; border-bottom: 1px solid #262626; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; font-size: 1rem; color: white; font-family: 'Kanit', sans-serif;">👥 สร้างคอมมูนิตี้ใหม่</h3>
+                <button id="close-group-modal-btn" style="background: none; border: none; color: #a8a8a8; font-size: 1.2rem; cursor: pointer; padding: 0;">✕</button>
+            </div>
+            
+            <div style="padding: 20px; display: flex; flex-direction: column; gap: 15px;">
+                <input type="text" id="new-group-name" placeholder="ชื่อกลุ่มของคุณ..." style="background: #000; border: 1px solid #363636; color: white; padding: 10px; border-radius: 8px; outline: none; font-family: 'Kanit', sans-serif;">
+                
+                <textarea id="new-group-desc" placeholder="คำอธิบายกลุ่มสั้นๆ..." rows="3" style="background: #000; border: 1px solid #363636; color: white; padding: 10px; border-radius: 8px; outline: none; font-family: 'Kanit', sans-serif; resize: none;"></textarea>
+                
+                <button id="submit-new-group-btn" style="background: #ec4899; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; font-family: 'Kanit', sans-serif;">
+                    ยืนยันการสร้างกลุ่ม
+                </button>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="groups.js"></script>
 
 </body>
 </html>

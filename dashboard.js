@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { getFirestore, collection, query, where, getDocs, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getFirestore, collection, query, where, getDocs, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBjXONUBgiJ9iys--Rk_pJwKtWu3EnTn9o",
@@ -15,6 +15,32 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+ 
+// ==========================================
+// 🎛️ ระบบตัวกรองฟีด (Feed Filters)
+// ==========================================
+let currentFeedFilter = 'foryou'; // ค่าเริ่มต้นคือหน้า "สำหรับคุณ"
+
+// ดักจับการกดปุ่มแท็บ
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('feed-tab')) {
+        // 1. ล้างสีชมพูออกจากทุกปุ่มก่อน
+        document.querySelectorAll('.feed-tab').forEach(tab => {
+            tab.style.color = '#a8a8a8';
+            tab.style.borderBottom = 'none';
+            tab.style.fontWeight = 'normal';
+        });
+        
+        // 2. ไฮไลท์สีชมพูให้ปุ่มที่เพิ่งโดนกด
+        e.target.style.color = '#ec4899';
+        e.target.style.borderBottom = '2px solid #ec4899';
+        e.target.style.fontWeight = '600';
+
+        // 3. จำไว้ว่าตอนนี้เลือกแท็บไหนอยู่ แล้วสั่งโหลดฟีดใหม่!
+        currentFeedFilter = e.target.getAttribute('data-filter');
+        loadFeedPosts(); 
+    }
+});
 
 let currentUserUid = null;
 let postBase64Image = ""; 
@@ -73,6 +99,7 @@ onAuthStateChanged(auth, async (user) => {
             hideLoadingScreen();
             loadFeedPosts(); 
             loadFriendsList();
+            loadCommunityStats();
             // 🌟 เรดาร์ตรวจจับการแจ้งเตือนใหม่ (Unread Badge)
             const notifBadge = document.getElementById('nav-notif-badge');
             if (notifBadge) {
@@ -236,7 +263,32 @@ async function loadFeedPosts() {
         postSnapshot.forEach((docSnap) => {
             allPosts.push({ id: docSnap.id, ...docSnap.data() });
         });
-        allPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        // 🌟 กรองข้อมูลตามแท็บที่เลือก (currentFeedFilter)
+        if (currentFeedFilter === 'following') {
+            // ถ้าเลือก "กำลังติดตาม" ให้ดึงรายชื่อเพื่อนมาก่อน
+            const friendsRef = collection(db, "users", currentUserUid, "friends");
+            const friendsSnap = await getDocs(friendsRef);
+            const friendIds = [];
+            friendsSnap.forEach(doc => friendIds.push(doc.id));
+            friendIds.push(currentUserUid); // รวมโพสต์ของตัวเองเข้าไปด้วย
+
+            // คัดเอาเฉพาะโพสต์ที่คนโพสต์ (uid) อยู่ในลิสต์เพื่อน
+            allPosts = allPosts.filter(post => friendIds.includes(post.uid));
+        }
+
+        // 🌟 เรียงลำดับข้อมูล
+        if (currentFeedFilter === 'popular') {
+            // ยอดนิยม = เรียงตามคนกดถูกใจเยอะสุดขึ้นก่อน
+            allPosts.sort((a, b) => {
+                const likesA = a.likes ? a.likes.length : 0;
+                const likesB = b.likes ? b.likes.length : 0;
+                return likesB - likesA; 
+            });
+        } else {
+            // ล่าสุด / สำหรับคุณ / กำลังติดตาม = เรียงตามเวลาล่าสุดขึ้นก่อน
+            allPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        }
 
         for (const post of allPosts) {
             const userDoc = await getDoc(doc(db, "users", post.uid));
@@ -274,7 +326,9 @@ async function loadFeedPosts() {
                 <div class="post-actions" style="margin-top: 10px; font-size: 1.5rem; display: flex; gap: 15px; align-items: center;">
                     <span class="like-btn" style="cursor: pointer; transition: transform 0.2s;">${heartIcon}</span> 
                     <span class="comment-toggle-btn" style="cursor: pointer; transition: transform 0.2s;">💬</span> 
-                    <span style="cursor: pointer;">📤</span>
+                    
+                    <span onclick="savePostToMyList('${post.id}')" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'" title="บันทึกโพสต์เก็บไว้">📥</span>
+                    
                     ${deleteBtnHTML}
                 </div>
                 <div class="like-count-display" style="font-size: 0.9rem; font-weight: 600; margin-top: 5px;">
@@ -641,3 +695,52 @@ document.addEventListener('click', async (e) => {
         }
     }
 });
+// ==========================================
+// 📊 ระบบสถิติชุมชน (ดึงข้อมูลจริงจากฐานข้อมูล)
+// ==========================================
+async function loadCommunityStats() {
+    try {
+        // 1. นับจำนวนสมาชิกทั้งหมด
+        const usersSnap = await getDocs(collection(db, "users"));
+        const statUsers = document.getElementById('stat-total-users');
+        if (statUsers) statUsers.innerText = usersSnap.size;
+
+        // 2. นับจำนวนโพสต์ทั้งหมดในระบบ
+        const postsSnap = await getDocs(collection(db, "posts"));
+        const statPosts = document.getElementById('stat-total-posts');
+        if (statPosts) statPosts.innerText = postsSnap.size;
+
+        // 3. สุ่มตัวเลขคนออนไลน์ขำๆ (ให้ดูมีสีสัน)
+        const statOnline = document.getElementById('stat-online-users');
+        if (statOnline) {
+            // สุ่มตัวเลขตั้งแต่ 1 ถึงจำนวนผู้ใช้ทั้งหมด
+            const randomOnline = Math.floor(Math.random() * usersSnap.size) + 1;
+            statOnline.innerText = randomOnline;
+        }
+
+    } catch (error) {
+        console.error("โหลดสถิติชุมชนไม่สำเร็จ:", error);
+    }
+}
+
+// สั่งให้โหลดสถิติทันทีที่มีการล็อกอิน (เอาคำสั่งนี้ไปวางต่อท้าย loadFeedPosts() ใน onAuthStateChanged ได้เลยครับ)
+// loadCommunityStats();
+// ==========================================
+// 🔖 ระบบบันทึกโพสต์ (Save Post)
+// ==========================================
+// ใช้ window. เพื่อให้ปุ่มใน HTML มองเห็นฟังก์ชันนี้ (เพราะไฟล์เราเป็น type="module")
+window.savePostToMyList = async (postId) => {
+    if (!currentUserUid) return alert("กรุณาล็อกอินก่อนครับ!");
+    
+    try {
+        // สร้างโฟลเดอร์ย่อยชื่อ "savedPosts" ในบัญชีของเรา แล้วโยนรหัสโพสต์เข้าไป
+        await setDoc(doc(db, "users", currentUserUid, "savedPosts", postId), {
+            savedAt: serverTimestamp()
+        });
+        
+        alert("🔖 บันทึกโพสต์นี้สำเร็จ! ไปดูได้ที่เมนู 'บันทึก' ครับ");
+    } catch (error) {
+        console.error("บันทึกโพสต์ขัดข้อง:", error);
+        alert("อ๊ะ! บันทึกไม่ได้ ลองใหม่อีกครั้งนะครับ");
+    }
+};

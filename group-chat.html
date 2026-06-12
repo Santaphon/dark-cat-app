@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark CAT - Group Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body { background-color: #000; color: #f5f5f5; font-family: 'Poppins', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* เมนูด้านซ้าย */
+        .sidebar { width: 244px; height: 100vh; border-right: 1px solid #262626; padding: 20px 12px; display: flex; flex-direction: column; background: #000; z-index: 10; }
+        .nav-item { display: flex; align-items: center; padding: 12px 18px; margin-bottom: 12px; background: #0d0d0d; border: 1px solid #262626; border-radius: 25px; color: #a8a8a8; text-decoration: none; font-size: 0.95rem; transition: 0.3s; }
+        .nav-item:hover { background: #121212; border-color: #ec4899; color: #ec4899; transform: translateX(5px); }
+        .nav-item span:first-child { margin-right: 15px; font-size: 1.1rem; }
+        .nav-item.active { background: rgba(236, 72, 153, 0.1); border-color: #ec4899; color: #ec4899; font-weight: bold; }
+
+        /* พื้นที่แชทกลุ่ม */
+        .chat-container { flex: 1; display: flex; flex-direction: column; background: #050505; height: 100vh; }
+        
+        /* หัวห้องแชท */
+        .chat-header { padding: 20px 30px; background: #0a0a0a; border-bottom: 1px solid #262626; display: flex; align-items: center; justify-content: space-between; }
+        .chat-header-info { display: flex; align-items: center; gap: 15px; }
+        .back-btn { background: #1a1a1a; color: white; border: 1px solid #363636; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-family: 'Kanit', sans-serif; text-decoration: none; }
+        .back-btn:hover { background: #262626; }
+
+        /* พื้นที่แสดงข้อความ */
+        .messages-area { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+        
+        /* กล่องข้อความ */
+        .msg-wrapper { display: flex; gap: 15px; max-width: 70%; }
+        .msg-wrapper.me { margin-left: auto; flex-direction: row-reverse; }
+        .msg-avatar { width: 40px; height: 40px; border-radius: 50%; border: 1px solid #262626; object-fit: cover; }
+        .msg-bubble { background: #1a1a1a; padding: 12px 18px; border-radius: 18px; border-top-left-radius: 4px; color: #f5f5f5; font-size: 0.95rem; line-height: 1.5; font-family: 'Kanit', sans-serif; position: relative; }
+        .msg-wrapper.me .msg-bubble { background: #ec4899; color: white; border-top-left-radius: 18px; border-top-right-radius: 4px; }
+        .sender-name { font-size: 0.75rem; color: #a8a8a8; margin-bottom: 5px; margin-top: -5px; }
+        .msg-wrapper.me .sender-name { display: none; /* ซ่อนชื่อตัวเอง */ }
+
+        /* แถบพิมพ์ข้อความ */
+        .chat-input-area { padding: 20px 30px; background: #0a0a0a; border-top: 1px solid #262626; display: flex; gap: 15px; align-items: center; }
+        .chat-input { flex: 1; background: #000; border: 1px solid #363636; color: white; padding: 15px 20px; border-radius: 30px; outline: none; font-family: 'Kanit', sans-serif; font-size: 0.95rem; }
+        .send-btn { background: #ec4899; color: white; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+        .send-btn:hover { transform: scale(1.1); box-shadow: 0 0 15px #ec4899; }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #363636; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <nav class="sidebar">
+        <div style="padding: 10px 12px; margin-bottom: 20px; text-align: center;">
+            <img src="logo.png.png" alt="DARK CAT" style="width: 100%; max-width: 160px; filter: drop-shadow(0px 0px 8px rgba(236, 72, 153, 0.4));">
+        </div>
+        <a href="dashboard.html" class="nav-item"><span>🏠</span> หน้าหลัก</a>
+        <a href="chat.html" class="nav-item"><span>💬</span> ข้อความ</a>
+        <a href="notifications.html" class="nav-item"><span>💖</span> การแจ้งเตือน</a>
+        <a href="profile.html" class="nav-item"><span>👤</span> โปรไฟล์</a>
+        <a href="groups.html" class="nav-item active"><span>👥</span> กลุ่ม</a>
+        <a href="settings.html" class="nav-item"><span>⚙️</span> ตั้งค่า</a>
+    </nav>
+
+    <main class="chat-container">
+        <header class="chat-header">
+            <div class="chat-header-info">
+                <div style="background: #1a1a1a; width: 50px; height: 50px; border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; border: 1px solid #363636;">🏘️</div>
+                <div>
+                    <h2 id="group-title" style="margin: 0; font-family: 'Kanit', sans-serif; color: white; font-size: 1.2rem;">กำลังโหลด...</h2>
+                    <span id="group-members-count" style="color: #a8a8a8; font-size: 0.85rem; font-family: 'Kanit', sans-serif;">...</span>
+                </div>
+            </div>
+            <a href="groups.html" class="back-btn">⬅️ กลับไปหน้ากลุ่ม</a>
+        </header>
+
+        <div class="messages-area" id="messages-area">
+            <div style="text-align: center; color: #555; font-family: 'Kanit', sans-serif; margin-top: auto; margin-bottom: auto;">
+                กำลังโหลดข้อความ... 🐈‍⬛
+            </div>
+        </div>
+
+        <div class="chat-input-area">
+            <input type="text" id="msg-input" class="chat-input" placeholder="พิมพ์ข้อความคุยกับเพื่อนๆ ในกลุ่ม..." autocomplete="off">
+            <button id="send-btn" class="send-btn">🚀</button>
+        </div>
+    </main>
+
+    <script type="module" src="group-chat.js"></script>
+</body>
+</html>

@@ -200,8 +200,12 @@ async function joinGroup(groupId, currentMemberCount) {
         await updateDoc(groupRef, {
             memberCount: currentMemberCount + 1
         });
+   
         alert("🎉 ยินดีด้วย! คุณได้เข้าร่วมกลุ่มนี้เรียบร้อยแล้ว");
-        fetchGroups(); 
+        
+        // 🌟 เพิ่มคำสั่งพาวาร์ปไปหน้าห้องแชทกลุ่ม พร้อมแนบรหัสกลุ่มไปกับลิงก์
+        window.location.href = `group-chat.html?id=${groupId}`; 
+        
     } catch (error) {
         console.error("เข้าร่วมกลุ่มไม่สำเร็จ: ", error);
         alert("อ๊ะ! ระบบขัดข้องเล็กน้อย");

@@ -744,3 +744,93 @@ window.savePostToMyList = async (postId) => {
         alert("อ๊ะ! บันทึกไม่ได้ ลองใหม่อีกครั้งนะครับ");
     }
 };
+// ==========================================
+// ✨ ระบบสร้างโพสต์ (Premium UI & Logic) ✨
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    // ดึง Element จากหน้าเว็บ
+    const createModal = document.getElementById('create-post-modal');
+    const closeCreateBtn = document.getElementById('close-create-btn');
+    const openModalInput = document.getElementById('open-modal-input');
+    const triggerPostBtn = document.getElementById('trigger-post-btn');
+    const btnAddImage = document.getElementById('btn-add-image');
+    const btnAddVideo = document.getElementById('btn-add-video');
+    const btnAddPoll = document.getElementById('btn-add-poll');
+    const btnAddFeel = document.getElementById('btn-add-feel');
+    
+    const imageUploadInput = document.getElementById('post-image-upload');
+    const imagePreview = document.getElementById('post-image-preview');
+    const uploadPlaceholder = document.getElementById('upload-placeholder');
+    const captionInput = document.getElementById('post-caption');
+
+    // ฟังก์ชันเปิด Modal แบบมีแอนิเมชันเด้งดึ๋ง
+    const openPostModal = () => {
+        if(createModal) {
+            createModal.style.display = 'flex';
+            createModal.querySelector('div').style.animation = 'modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards';
+            captionInput.focus(); // เคอร์เซอร์ไปรอที่ช่องพิมพ์เลย
+        }
+    };
+
+    // ฟังก์ชันปิด Modal
+    const closePostModal = () => {
+        if(createModal) {
+            createModal.style.display = 'none';
+            // ล้างค่าเมื่อปิด
+            captionInput.value = '';
+            imageUploadInput.value = '';
+            imagePreview.style.display = 'none';
+            imagePreview.src = '';
+            uploadPlaceholder.style.display = 'block';
+        }
+    };
+
+    // --- ผูก Event เปิด/ปิด ---
+    if(openModalInput) openModalInput.addEventListener('click', openPostModal);
+    if(triggerPostBtn) triggerPostBtn.addEventListener('click', openPostModal);
+    if(closeCreateBtn) closeCreateBtn.addEventListener('click', closePostModal);
+    
+    // กดพื้นที่สีดำเพื่อปิด
+    window.addEventListener('click', (e) => {
+        if (e.target === createModal) closePostModal();
+    });
+
+    // --- ฟีเจอร์: กดปุ่ม "รูปภาพ" แล้วให้เปิด Modal พร้อมหน้าต่างเลือกไฟล์ ---
+    if(btnAddImage) {
+        btnAddImage.addEventListener('click', () => {
+            openPostModal();
+            // หน่วงเวลานิดนึงให้ Modal เปิดก่อนค่อยเรียกหน้าต่างเลือกไฟล์
+            setTimeout(() => {
+                if(imageUploadInput) imageUploadInput.click();
+            }, 300);
+        });
+    }
+
+    // --- ฟีเจอร์: ปุ่มอื่นๆ (ทำเผื่ออนาคต) ---
+    const showComingSoon = (feature) => alert(`🚀 ฟีเจอร์ "${feature}" กำลังอยู่ในช่วงพัฒนา รออัปเดตแพทช์หน้านะครับ!`);
+    if(btnAddVideo) btnAddVideo.addEventListener('click', () => showComingSoon('วิดีโอ'));
+    if(btnAddPoll) btnAddPoll.addEventListener('click', () => showComingSoon('โพล'));
+    if(btnAddFeel) btnAddFeel.addEventListener('click', () => showComingSoon('ความรู้สึก'));
+
+    // --- ฟีเจอร์: พรีวิวรูปภาพก่อนโพสต์ ---
+    if(imageUploadInput) {
+        imageUploadInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                // เช็กขนาดไฟล์ไม่เกิน 1MB (1048576 bytes)
+                if(file.size > 1048576) {
+                    alert('ไฟล์ภาพใหญ่เกิน 1MB ครับคุณเดฟ! ลองรูปอื่นดูนะ');
+                    this.value = ''; // ล้างค่า
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                    uploadPlaceholder.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+});

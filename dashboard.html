@@ -183,17 +183,20 @@
         
         <div style="width: 100%; max-width: 470px; margin-right: 64px; display: flex; flex-direction: column;">
             
-            <div style="background: #0d0d0d; border: 1px solid #262626; border-radius: 15px; padding: 20px; margin-bottom: 20px;">
+            <div style="background: #0d0d0d; border: 1px solid #262626; border-radius: 15px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
                 <div style="display: flex; gap: 15px; align-items: center;">
-                    <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Black%20Cat.png" style="width: 45px; height: 45px; border-radius: 50%; border: 1px solid #363636; object-fit: cover;">
-                    <input type="text" placeholder="คุณกำลังคิดอะไรอยู่?" style="flex: 1; background: #000; color: white; border: 1px solid #363636; border-radius: 30px; padding: 12px 20px; outline: none; font-family: 'Kanit', sans-serif; font-size: 0.95rem;">
-                    <button id="create-nav-btn" style="background: #ec4899; color: white; border: none; padding: 10px 25px; border-radius: 30px; font-weight: bold; cursor: pointer; font-family: 'Kanit', sans-serif; transition: 0.2s;" onmouseover="this.style.background='#db2777'" onmouseout="this.style.background='#ec4899'">โพสต์</button>
+                    <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Black%20Cat.png" style="width: 45px; height: 45px; border-radius: 50%; border: 1px solid #ec4899; object-fit: cover;">
+                    
+                    <input type="text" id="open-modal-input" placeholder="คุณกำลังคิดอะไรอยู่?" style="flex: 1; background: #000; color: white; border: 1px solid #363636; border-radius: 30px; padding: 12px 20px; outline: none; font-family: 'Kanit', sans-serif; font-size: 0.95rem; cursor: pointer; transition: 0.3s;" onmouseover="this.style.borderColor='#ec4899'" onmouseout="this.style.borderColor='#363636'" readonly>
+                    
+                    <button id="trigger-post-btn" style="background: linear-gradient(45deg, #ec4899, #8b5cf6); color: white; border: none; padding: 10px 25px; border-radius: 30px; font-weight: bold; cursor: pointer; font-family: 'Kanit', sans-serif; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 0 15px rgba(236, 72, 153, 0.5)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">โพสต์</button>
                 </div>
                 <div style="display: flex; justify-content: space-around; margin-top: 15px; border-top: 1px solid #262626; padding-top: 15px; font-family: 'Kanit', sans-serif;">
-                    <button style="background: transparent; color: #a8a8a8; border: none; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; transition: 0.2s;"><span style="font-size: 1.2rem;">🖼️</span> รูปภาพ</button>
-                    <button style="background: transparent; color: #a8a8a8; border: none; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; transition: 0.2s;"><span style="font-size: 1.2rem;">🎥</span> วิดีโอ</button>
-                    <button style="background: transparent; color: #a8a8a8; border: none; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; transition: 0.2s;"><span style="font-size: 1.2rem;">📊</span> โพล</button>
-                    <button style="background: transparent; color: #a8a8a8; border: none; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; transition: 0.2s;"><span style="font-size: 1.2rem;">😀</span> ความรู้สึก</button>
+                    
+                    <button id="btn-add-image" style="background: transparent; color: #a8a8a8; border: none; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; transition: 0.2s; padding: 5px 10px; border-radius: 8px;" onmouseover="this.style.background='#1a1a1a'; this.style.color='#ec4899'" onmouseout="this.style.background='transparent'; this.style.color='#a8a8a8'"><span style="font-size: 1.2rem;">🖼️</span> รูปภาพ</button>
+                    <button id="btn-add-video" style="background: transparent; color: #a8a8a8; border: none; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; transition: 0.2s; padding: 5px 10px; border-radius: 8px;" onmouseover="this.style.background='#1a1a1a'; this.style.color='#ec4899'" onmouseout="this.style.background='transparent'; this.style.color='#a8a8a8'"><span style="font-size: 1.2rem;">🎥</span> วิดีโอ</button>
+                    <button id="btn-add-poll" style="background: transparent; color: #a8a8a8; border: none; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; transition: 0.2s; padding: 5px 10px; border-radius: 8px;" onmouseover="this.style.background='#1a1a1a'; this.style.color='#ec4899'" onmouseout="this.style.background='transparent'; this.style.color='#a8a8a8'"><span style="font-size: 1.2rem;">📊</span> โพล</button>
+                    <button id="btn-add-feel" style="background: transparent; color: #a8a8a8; border: none; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; transition: 0.2s; padding: 5px 10px; border-radius: 8px;" onmouseover="this.style.background='#1a1a1a'; this.style.color='#ec4899'" onmouseout="this.style.background='transparent'; this.style.color='#a8a8a8'"><span style="font-size: 1.2rem;">😀</span> ความรู้สึก</button>
                 </div>
             </div>
 

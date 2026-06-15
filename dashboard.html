@@ -263,25 +263,55 @@
 
         </div>
     </div>
-    <div id="create-post-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
-        <div style="background: #121212; width: 400px; border-radius: 12px; border: 1px solid #262626; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+   <div id="create-post-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(5px); font-family: 'Kanit', sans-serif;">
+        <div style="background: #0d0d0d; width: 90%; max-width: 500px; border-radius: 15px; border: 1px solid #ec4899; box-shadow: 0 10px 30px rgba(236, 72, 153, 0.2); overflow: hidden; display: flex; flex-direction: column;">
             
-            
-            <div style="padding: 15px; border-bottom: 1px solid #262626; display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="margin: 0; font-size: 1rem; text-align: center; flex: 1;">สร้างโพสต์ใหม่</h3>
-                <button id="close-create-btn" style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; padding: 0;">✕</button>
+            <div style="padding: 15px 20px; border-bottom: 1px solid #262626; display: flex; justify-content: space-between; align-items: center; background: #121212;">
+                <h3 style="margin: 0; color: #f5f5f5; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">✨ <span id="modal-title">สร้างโพสต์ใหม่</span></h3>
+                <button id="close-create-btn" style="background: none; border: none; color: #a8a8a8; font-size: 1.5rem; cursor: pointer; transition: 0.2s;" onmouseover="this.style.color='#ec4899'" onmouseout="this.style.color='#a8a8a8'">✕</button>
             </div>
             
-            <div style="padding: 20px; display: flex; flex-direction: column; gap: 15px;">
-                <label for="post-image-upload" style="cursor: pointer; background: #000; border: 2px dashed #363636; border-radius: 8px; height: 200px; display: flex; justify-content: center; align-items: center; overflow: hidden;">
-                    <span id="upload-placeholder" style="color: #a8a8a8; font-size: 0.9rem;">+ อัปโหลดรูปภาพ (ไม่เกิน 1MB)</span>
-                    <img id="post-image-preview" style="display: none; width: 100%; height: 100%; object-fit: cover;">
-                </label>
-                <input type="file" id="post-image-upload" accept="image/*" style="display: none;">
+            <div style="padding: 20px; display: flex; flex-direction: column; gap: 15px; max-height: 70vh; overflow-y: auto;">
                 
-                <textarea id="post-caption" placeholder="เขียนคำบรรยาย..." rows="3" style="background: #000; border: 1px solid #363636; color: white; padding: 10px; border-radius: 8px; outline: none; font-family: 'Poppins', sans-serif; resize: none; font-size: 0.9rem;"></textarea>
+                <div id="feeling-zone" style="display: none; background: #1a1a1a; padding: 10px; border-radius: 8px; border: 1px solid #363636;">
+                    <span style="color: #a8a8a8; font-size: 0.85rem; margin-right: 10px;">คุณกำลังรู้สึก:</span>
+                    <select id="feeling-select" style="background: #000; color: #ec4899; border: 1px solid #363636; padding: 5px 10px; border-radius: 5px; outline: none; font-family: 'Kanit', sans-serif; cursor: pointer;">
+                        <option value="">-- เลือกความรู้สึก --</option>
+                        <option value="มีความสุข 😊">มีความสุข 😊</option>
+                        <option value="ตื่นเต้น 🤩">ตื่นเต้น 🤩</option>
+                        <option value="เศร้า 😢">เศร้า 😢</option>
+                        <option value="หิว 🍔">หิว 🍔</option>
+                        <option value="ชิลๆ ☕">ชิลๆ ☕</option>
+                    </select>
+                </div>
+
+                <textarea id="post-caption" placeholder="คุณกำลังคิดอะไรอยู่...?" rows="4" style="background: #000; border: 1px solid #363636; color: white; padding: 15px; border-radius: 10px; outline: none; font-family: 'Kanit', sans-serif; resize: none; font-size: 1rem; width: 100%; box-sizing: border-box;"></textarea>
                 
-                <button id="share-post-btn" style="background: #ec4899; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s;">แชร์โพสต์</button>
+                <div id="media-upload-zone" style="display: none;">
+                    <label for="post-media-upload" style="cursor: pointer; background: #000; border: 2px dashed #363636; border-radius: 10px; height: 180px; display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative; transition: 0.2s;" onmouseover="this.style.borderColor='#ec4899'">
+                        <span id="upload-placeholder" style="color: #a8a8a8; font-size: 0.9rem; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                            <span style="font-size: 2rem;" id="upload-icon">📸</span>
+                            <span id="upload-text">คลิกเพื่ออัปโหลดไฟล์</span>
+                        </span>
+                        <img id="post-image-preview" style="display: none; width: 100%; height: 100%; object-fit: contain; background: #000;">
+                        <video id="post-video-preview" controls style="display: none; width: 100%; height: 100%; background: #000;"></video>
+                    </label>
+                    <input type="file" id="post-media-upload" accept="image/*,video/*" style="display: none;">
+                </div>
+
+                <div id="poll-zone" style="display: none; background: #000; border: 1px solid #363636; border-radius: 10px; padding: 15px;">
+                    <strong style="color: #3b82f6; font-size: 0.9rem; display: block; margin-bottom: 10px;">📊 ตั้งคำถามและตัวเลือกโพล</strong>
+                    <div id="poll-choices-container">
+                        <input type="text" class="poll-choice" placeholder="ตัวเลือกที่ 1" style="width: 100%; background: #1a1a1a; color: white; border: 1px solid #262626; padding: 10px; border-radius: 5px; margin-bottom: 10px; outline: none; box-sizing: border-box; font-family: 'Kanit', sans-serif;">
+                        <input type="text" class="poll-choice" placeholder="ตัวเลือกที่ 2" style="width: 100%; background: #1a1a1a; color: white; border: 1px solid #262626; padding: 10px; border-radius: 5px; margin-bottom: 10px; outline: none; box-sizing: border-box; font-family: 'Kanit', sans-serif;">
+                    </div>
+                    <button id="add-poll-choice-btn" style="background: transparent; color: #a8a8a8; border: 1px dashed #363636; width: 100%; padding: 8px; border-radius: 5px; cursor: pointer; transition: 0.2s; font-family: 'Kanit', sans-serif;" onmouseover="this.style.borderColor='#3b82f6'; this.style.color='#3b82f6'">+ เพิ่มตัวเลือกโพล</button>
+                </div>
+
+            </div>
+
+            <div style="padding: 15px 20px; border-top: 1px solid #262626; background: #121212;">
+                <button id="share-post-btn" style="width: 100%; background: linear-gradient(45deg, #ec4899, #8b5cf6); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 1rem; cursor: pointer; font-family: 'Kanit', sans-serif; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 0 15px rgba(236, 72, 153, 0.4)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">🚀 โพสต์เลย!</button>
             </div>
         </div>
     </div>

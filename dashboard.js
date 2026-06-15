@@ -242,7 +242,8 @@ if (searchBtn && searchModal && searchResults) {
 }
 
 // ==========================================
-// 🖼️ 2. ระบบดึงโพสต์มาแสดงที่หน้าหลัก (Feed)
+// ==========================================
+// 🖼️ 2. ระบบดึงโพสต์มาแสดงที่หน้าหลัก (Feed) อัปเกรดรับ Super Modal!
 // ==========================================
 async function loadFeedPosts() {
     const feedContainer = document.querySelector('.feed');
@@ -264,29 +265,24 @@ async function loadFeedPosts() {
             allPosts.push({ id: docSnap.id, ...docSnap.data() });
         });
 
-        // 🌟 กรองข้อมูลตามแท็บที่เลือก (currentFeedFilter)
+        // กรองข้อมูลตามแท็บที่เลือก
         if (currentFeedFilter === 'following') {
-            // ถ้าเลือก "กำลังติดตาม" ให้ดึงรายชื่อเพื่อนมาก่อน
             const friendsRef = collection(db, "users", currentUserUid, "friends");
             const friendsSnap = await getDocs(friendsRef);
             const friendIds = [];
             friendsSnap.forEach(doc => friendIds.push(doc.id));
-            friendIds.push(currentUserUid); // รวมโพสต์ของตัวเองเข้าไปด้วย
-
-            // คัดเอาเฉพาะโพสต์ที่คนโพสต์ (uid) อยู่ในลิสต์เพื่อน
+            friendIds.push(currentUserUid);
             allPosts = allPosts.filter(post => friendIds.includes(post.uid));
         }
 
-        // 🌟 เรียงลำดับข้อมูล
+        // เรียงลำดับข้อมูล
         if (currentFeedFilter === 'popular') {
-            // ยอดนิยม = เรียงตามคนกดถูกใจเยอะสุดขึ้นก่อน
             allPosts.sort((a, b) => {
                 const likesA = a.likes ? a.likes.length : 0;
                 const likesB = b.likes ? b.likes.length : 0;
                 return likesB - likesA; 
             });
         } else {
-            // ล่าสุด / สำหรับคุณ / กำลังติดตาม = เรียงตามเวลาล่าสุดขึ้นก่อน
             allPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         }
 
@@ -298,46 +294,71 @@ async function loadFeedPosts() {
             const likes = post.likes || []; 
             const isLiked = likes.includes(currentUserUid);
             const heartIcon = isLiked ? '❤️' : '🤍';
-        const likeCount = likes.length;
+            const likeCount = likes.length;
 
-        // 🌟 เช็กว่าเป็นโพสต์ของเราไหม ถ้าใช่ให้สร้างปุ่มถังขยะ
-        const isMyPost = post.uid === currentUserUid;
-        const deleteBtnHTML = isMyPost ? `<span class="delete-post-btn" style="cursor: pointer; margin-left: auto; font-size: 1.2rem;" title="ลบโพสต์">🗑️</span>` : '';
+            const isMyPost = post.uid === currentUserUid;
+            const deleteBtnHTML = isMyPost ? `<span class="delete-post-btn" style="cursor: pointer; margin-left: auto; font-size: 1.2rem;" title="ลบโพสต์">🗑️</span>` : '';
+            const timeText = timeAgo(post.createdAt);
 
-        const timeText = timeAgo(post.createdAt); // คำนวณเวลาของโพสต์นี้
-        const postElement = document.createElement('article');
-        
-        postElement.className = 'post';
-        postElement.innerHTML = `
+            // --- 🌟 เริ่มโซน Super Modal Render (ดึงข้อมูล ความรู้สึก/สื่อ/โพล มาวาดลงหน้าจอ) ---
+            const feelingHTML = post.feeling ? `<span style="color: #ec4899; font-size: 0.85rem; margin-left: 5px;">กำลังรู้สึก ${post.feeling}</span>` : '';
+            
+            let mediaHTML = '';
+            if (post.mediaUrl) { // ถ้าระบบใหม่ส่งรูปหรือวิดีโอมา
+                if (post.mediaType === 'video') {
+                    mediaHTML = `<div class="post-image" style="background: #121212;"><video src="${post.mediaUrl}" controls style="width: 100%; display: block; max-height: 500px;"></video></div>`;
+                } else {
+                    mediaHTML = `<div class="post-image" style="background: #121212;"><img src="${post.mediaUrl}" style="width: 100%; display: block;" alt="Post image"></div>`;
+                }
+            } else if (post.imageUrl) { // เผื่อรองรับโพสต์เก่าๆ ที่คุณเดฟเคยเทสไว้
+                mediaHTML = `<div class="post-image" style="background: #121212;"><img src="${post.imageUrl}" style="width: 100%; display: block;" alt="Post image"></div>`;
+            }
+
+            let pollHTML = '';
+            if (post.poll && post.poll.choices) {
+                pollHTML = `<div style="margin-top: 15px; border: 1px solid #262626; border-radius: 10px; padding: 15px; background: #0a0a0a;">
+                    <strong style="color: #3b82f6; font-size: 0.9rem; display: flex; align-items: center; gap: 5px;">📊 โพลสำรวจ</strong>
+                    <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">`;
+                post.poll.choices.forEach((choice) => {
+                    pollHTML += `<button style="width: 100%; background: #1a1a1a; border: 1px solid #262626; color: white; padding: 10px; border-radius: 8px; text-align: left; cursor: pointer; transition: 0.2s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#262626'">${choice}</button>`;
+                });
+                pollHTML += `</div></div>`;
+            }
+            // --- 🌟 จบโซน Super Modal Render ---
+
+            const postElement = document.createElement('article');
+            postElement.className = 'post';
+            postElement.innerHTML = `
                 <div class="post-header" style="display: flex; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center;">
                         <a href="profile.html?uid=${post.uid}" style="text-decoration: none; display: flex; align-items: center; gap: 10px; color: inherit;">
                             <img src="${profilePic}" alt="Profile" style="cursor: pointer; width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
                             <span class="username" style="cursor: pointer; font-weight: bold;">${userData.name}</span>
                         </a>
+                        ${feelingHTML}
                         <span class="time" style="color: #a8a8a8; font-size: 0.8rem; margin-left: 8px;">• ${timeText}</span>
                     </div>
-                    <span class="save-post-btn" data-id="${post.id}" data-author="${userData.name}" data-avatar="${profilePic}" data-content="${post.caption || ''}" data-image="${post.imageUrl || ''}" style="color: #a8a8a8; cursor: pointer; font-size: 1.2rem; transition: 0.2s;" onmouseover="this.style.color='#ec4899'" onmouseout="this.style.color='#a8a8a8'" title="บันทึกโพสต์">🔖</span>
+                    <span class="save-post-btn" data-id="${post.id}" data-author="${userData.name}" data-avatar="${profilePic}" data-content="${post.caption || ''}" data-image="${post.mediaUrl || post.imageUrl || ''}" style="color: #a8a8a8; cursor: pointer; font-size: 1.2rem; transition: 0.2s;" onmouseover="this.style.color='#ec4899'" onmouseout="this.style.color='#a8a8a8'" title="บันทึกโพสต์">🔖</span>
                 </div>
                 
-                <div class="post-image" style="background: #121212;">
-                    <img src="${post.imageUrl}" style="width: 100%; display: block;" alt="Post image">
+                ${mediaHTML}
+                
+                <div class="post-caption" style="font-size: 0.9rem; margin-top: 10px; line-height: 1.5;">
+                    <strong>${userData.name}</strong> ${post.caption || ''}
                 </div>
+                
+                ${pollHTML}
+
                 <div class="post-actions" style="margin-top: 10px; font-size: 1.5rem; display: flex; gap: 15px; align-items: center;">
                     <span class="like-btn" style="cursor: pointer; transition: transform 0.2s;">${heartIcon}</span> 
                     <span class="comment-toggle-btn" style="cursor: pointer; transition: transform 0.2s;">💬</span> 
-                    
                     <span onclick="savePostToMyList('${post.id}')" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'" title="บันทึกโพสต์เก็บไว้">📥</span>
-                    
                     ${deleteBtnHTML}
                 </div>
                 <div class="like-count-display" style="font-size: 0.9rem; font-weight: 600; margin-top: 5px;">
                     ${likeCount} ถูกใจ
                 </div>
-                <div class="post-caption" style="font-size: 0.9rem; margin-top: 5px; line-height: 1.5;">
-                    <strong>${userData.name}</strong> ${post.caption}
-                </div>
-
+                
                 <div class="comments-section" style="display: none; margin-top: 15px; border-top: 1px solid #262626; padding-top: 15px;">
                     <div class="comments-list" style="max-height: 150px; overflow-y: auto; margin-bottom: 10px; font-size: 0.85rem; display: flex; flex-direction: column; gap: 8px;">
                         <div style="text-align: center; color: #a8a8a8;">กำลังเตรียมช่องคอมเมนต์...</div>
@@ -349,53 +370,34 @@ async function loadFeedPosts() {
                 </div>
             `;
 
-            // ดึงปุ่มต่างๆ บนโพสต์มาเตรียมไว้
+            // --- 🌟 ระบบคอมเมนต์, กดถูกใจ และลบโพสต์ (คงโค้ดเดิมของคุณเดฟไว้ 100%) ---
             const likeBtn = postElement.querySelector('.like-btn');
             const likeCountDisplay = postElement.querySelector('.like-count-display');
-            
-            // 🌟 แทรกโค้ดดึงปุ่มคอมเมนต์เพิ่มตรงนี้ครับ! 🌟
             const commentToggleBtn = postElement.querySelector('.comment-toggle-btn');
             const commentsSection = postElement.querySelector('.comments-section');
 
-            // 🌟 คำสั่งเมื่อกดปุ่มไอคอนแชท 💬 ให้เปิด/ปิดกล่องคอมเมนต์
             commentToggleBtn.addEventListener('click', () => {
-                // ใส่เอฟเฟกต์เด้งดึ๋งให้ปุ่มน่ารักๆ
                 commentToggleBtn.style.transform = 'scale(1.3)';
                 setTimeout(() => commentToggleBtn.style.transform = 'scale(1)', 150);
-
-                // สลับโชว์/ซ่อน กล่องคอมเมนต์
-                if (commentsSection.style.display === 'none') {
-                    commentsSection.style.display = 'block';
-                } else {
-                    commentsSection.style.display = 'none';
-                }
+                commentsSection.style.display = commentsSection.style.display === 'none' ? 'block' : 'none';
             });
-            // ==========================================
-            // 🌟 3. ระบบดึงและส่งคอมเมนต์ 🌟
-            // ==========================================
+
             const sendCommentBtn = postElement.querySelector('.send-comment-btn');
             const commentInput = postElement.querySelector('.comment-input');
             const commentsList = postElement.querySelector('.comments-list');
 
-            // 3.1 ฟังก์ชันดึงคอมเมนต์มาแสดง
             const loadComments = async () => {
                 try {
-                    // เข้าไปที่โฟลเดอร์ comments ย่อยของโพสต์นั้นๆ
                     const commentsRef = collection(db, "posts", post.id, "comments");
                     const qSnap = await getDocs(commentsRef);
-                    
-                    commentsList.innerHTML = ''; // ล้างคำว่ากำลังเตรียมช่องคอมเมนต์
-                    
+                    commentsList.innerHTML = ''; 
                     if (qSnap.empty) {
                         commentsList.innerHTML = '<div style="text-align: center; color: #555; padding: 10px 0;">ยังไม่มีคอมเมนต์ เริ่มพิมพ์คนแรกเลย! 💬</div>';
                         return;
                     }
-
                     let allComments = [];
                     qSnap.forEach(doc => allComments.push(doc.data()));
-                    // เรียงเวลาจากเก่าไปใหม่ (บนลงล่าง)
                     allComments.sort((a, b) => a.createdAt - b.createdAt);
-
                     allComments.forEach(c => {
                         const cEl = document.createElement('div');
                         cEl.style.cssText = "display: flex; gap: 10px; margin-bottom: 8px; align-items: flex-start;";
@@ -408,28 +410,20 @@ async function loadFeedPosts() {
                         `;
                         commentsList.appendChild(cEl);
                     });
-                } catch (err) {
-                    console.error("โหลดคอมเมนต์พัง:", err);
-                }
+                } catch (err) { console.error("โหลดคอมเมนต์พัง:", err); }
             };
-
-            // สั่งให้โหลดคอมเมนต์ทันทีที่หน้าฟีดโชว์ขึ้นมา
+            
             loadComments();
 
-            // 3.2 คำสั่งตอนกดปุ่ม "โพสต์" เพื่อส่งคอมเมนต์
             sendCommentBtn.addEventListener('click', async () => {
                 const text = commentInput.value.trim();
-                if (!text) return; // ถ้าพิมพ์ช่องว่างเฉยๆ ไม่ต้องส่ง
-                
+                if (!text) return; 
                 try {
                     sendCommentBtn.textContent = '...';
                     sendCommentBtn.disabled = true;
-
-                    // เอาข้อมูลชื่อและรูปเราไปแปะในคอมเมนต์ด้วย จะได้โชว์ได้ทันที
                     const myDoc = await getDoc(doc(db, "users", currentUserUid));
                     const myData = myDoc.exists() ? myDoc.data() : { name: "ฉันเอง", profilePic: "" };
 
-                    // บันทึกลงฐานข้อมูล
                     await addDoc(collection(db, "posts", post.id, "comments"), {
                         uid: currentUserUid,
                         name: myData.name || "ผู้ใช้งาน",
@@ -438,7 +432,6 @@ async function loadFeedPosts() {
                         createdAt: Date.now() 
                     });
 
-                    // 🌟 ส่งแจ้งเตือนหาเจ้าของโพสต์ด้วย (ถ้าไม่ใช่โพสต์เราเอง)
                     if (post.uid !== currentUserUid) {
                         await addDoc(collection(db, "notifications"), {
                             receiverId: post.uid,
@@ -449,32 +442,25 @@ async function loadFeedPosts() {
                             read: false
                         });
                     }
-
-                    commentInput.value = ''; // ล้างช่องพิมพ์
-                    await loadComments(); // รีเฟรชคอมเมนต์ใหม่ให้โชว์เด้งขึ้นมาเลย
-
-                } catch (err) {
-                    console.error("ส่งคอมเมนต์ไม่ได้:", err);
+                    commentInput.value = '';
+                    await loadComments();
+                } catch (err) { console.error("ส่งคอมเมนต์ไม่ได้:", err);
                 } finally {
                     sendCommentBtn.textContent = 'โพสต์';
                     sendCommentBtn.disabled = false;
                 }
             });
-            // ฟังก์ชันกดหัวใจ (มีระบบส่งแจ้งเตือนในตัวแบบสมบูรณ์)
+
             likeBtn.addEventListener('click', async () => {
                 likeBtn.style.transform = 'scale(1.3)';
                 setTimeout(() => likeBtn.style.transform = 'scale(1)', 150);
-
                 const postRef = doc(db, "posts", post.id);
                 try {
                     if (likeBtn.textContent === '🤍') {
                         likeBtn.textContent = '❤️';
                         likes.push(currentUserUid);
                         likeCountDisplay.textContent = `${likes.length} ถูกใจ`;
-                        
                         await updateDoc(postRef, { likes: arrayUnion(currentUserUid) });
-
-                        // 🌟 ส่งสัญญาณแจ้งเตือนไปที่คอลเล็กชัน notifications
                         await addDoc(collection(db, "notifications"), {
                             receiverId: post.uid,         
                             senderId: currentUserUid,     
@@ -483,42 +469,31 @@ async function loadFeedPosts() {
                             createdAt: serverTimestamp(),
                             read: false
                         });
-
                     } else {
                         likeBtn.textContent = '🤍';
                         const index = likes.indexOf(currentUserUid);
                         if (index > -1) likes.splice(index, 1);
                         likeCountDisplay.textContent = `${likes.length} ถูกใจ`;
-                        
                         await updateDoc(postRef, { likes: arrayRemove(currentUserUid) });
                     }
-                } catch (error) {
-                    console.error("กดหัวใจไม่สำเร็จ:", error);
-                }
+                } catch (error) { console.error("กดหัวใจไม่สำเร็จ:", error); }
             });
-             // 🌟 ระบบกดปุ่มลบโพสต์
-        if (isMyPost) {
-            const deleteBtn = postElement.querySelector('.delete-post-btn');
-            deleteBtn.addEventListener('click', async () => {
-                const confirmDelete = confirm("แน่ใจนะว่าจะลบโพสต์นี้ทิ้ง? 😿");
-                if (confirmDelete) {
-                    try {
-                        // ลบข้อมูลออกจากฐานข้อมูล Firebase
-                        await deleteDoc(doc(db, "posts", post.id));
-                        // รีเฟรชหน้าจอใหม่ให้โพสต์หายไป
-                        loadFeedPosts(); 
-                    } catch (error) {
-                        console.error("ลบโพสต์ไม่สำเร็จ:", error);
-                        alert("เกิดข้อผิดพลาดในการลบโพสต์ครับ");
+
+            if (isMyPost) {
+                const deleteBtn = postElement.querySelector('.delete-post-btn');
+                deleteBtn.addEventListener('click', async () => {
+                    const confirmDelete = confirm("แน่ใจนะว่าจะลบโพสต์นี้ทิ้ง? 😿");
+                    if (confirmDelete) {
+                        try {
+                            await deleteDoc(doc(db, "posts", post.id));
+                            loadFeedPosts(); 
+                        } catch (error) { console.error("ลบโพสต์ไม่สำเร็จ:", error); alert("เกิดข้อผิดพลาดในการลบโพสต์ครับ"); }
                     }
-                }
-            });
-        }
+                });
+            }
             feedContainer.appendChild(postElement);
         }
-    } catch (e) {
-        console.error("โหลดโพสต์ผิดพลาด: ", e);
-    }
+    } catch (e) { console.error("โหลดโพสต์ผิดพลาด: ", e); }
 }
 
 // ==========================================
@@ -563,96 +538,6 @@ async function loadFriendsList() {
 }
 
 // ==========================================
-// 📸 4. ระบบสร้างโพสต์ (Create Post)
-// ==========================================
-const createBtn = document.getElementById('create-nav-btn');
-const createModal = document.getElementById('create-post-modal');
-const closeCreateBtn = document.getElementById('close-create-btn');
-const postImageUpload = document.getElementById('post-image-upload');
-const postImagePreview = document.getElementById('post-image-preview');
-const uploadPlaceholder = document.getElementById('upload-placeholder');
-
-if (createBtn && createModal) {
-    createBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        createModal.style.display = 'flex';
-    });
-}
-if (closeCreateBtn && createModal) {
-    closeCreateBtn.addEventListener('click', () => {
-        createModal.style.display = 'none';
-    });
-}
-
-if (postImageUpload) {
-    postImageUpload.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        if (file.size > 1024 * 1024) {
-            alert("ไฟล์รูปใหญ่เกินไปครับ! (ขอไม่เกิน 1MB นะ)");
-            return;
-        }
-        const reader = new FileReader();
-        reader.readAsDataURL(file); 
-        reader.onload = () => {
-            postBase64Image = reader.result; 
-            if(postImagePreview && uploadPlaceholder) {
-                postImagePreview.src = postBase64Image;
-                postImagePreview.style.display = 'block';
-                uploadPlaceholder.style.display = 'none';
-            }
-        };
-    });
-}
-
-const sharePostBtn = document.getElementById('share-post-btn');
-if (sharePostBtn) {
-    sharePostBtn.addEventListener('click', async () => {
-        const caption = document.getElementById('post-caption').value.trim();
-        if (!postBase64Image) {
-            alert("กรุณาเลือกรูปภาพก่อนครับ!");
-            return;
-        }
-        try {
-            sharePostBtn.textContent = 'กำลังแชร์...';
-            sharePostBtn.style.background = '#363636';
-            sharePostBtn.disabled = true;
-
-            const postId = "post_" + Date.now().toString(); 
-            const newPostRef = doc(db, "posts", postId); 
-            
-            await setDoc(newPostRef, {
-                uid: currentUserUid,
-                imageUrl: postBase64Image,
-                caption: caption,
-                likes: [],
-                createdAt: new Date().toISOString()
-            });
-
-            alert("แชร์โพสต์สำเร็จ! 🎉");
-            if(createModal) createModal.style.display = 'none';
-            
-            postBase64Image = "";
-            if(postImagePreview) {
-                postImagePreview.src = "";
-                postImagePreview.style.display = 'none';
-            }
-            if(uploadPlaceholder) uploadPlaceholder.style.display = 'block';
-            const captionInput = document.getElementById('post-caption');
-            if (captionInput) captionInput.value = '';
-
-            loadFeedPosts(); 
-        } catch (error) {
-            console.error("สร้างโพสต์ไม่ได้: ", error);
-            alert("เกิดข้อผิดพลาดในการแชร์โพสต์");
-        } finally {
-            sharePostBtn.textContent = 'แชร์โพสต์';
-            sharePostBtn.style.background = '#ec4899';
-            sharePostBtn.disabled = false;
-        }
-    });
-}
-
 // ==========================================
 // 🚪 5. ระบบออกจากระบบ (Logout)
 // ==========================================
@@ -664,6 +549,7 @@ if (logoutBtn) {
         }).catch((error) => console.error("ออกจากระบบไม่ได้:", error));
     });
 }
+
 // ==========================================
 // 🔖 6. ระบบดักจับการกดปุ่ม "บันทึกโพสต์" (Saved)
 // ==========================================
@@ -673,7 +559,6 @@ document.addEventListener('click', async (e) => {
         if (!auth.currentUser) return alert("กรุณาล็อกอินก่อนครับ!");
 
         try {
-            // สั่งบันทึกข้อมูลโพสต์นั้นๆ ลงโฟลเดอร์ saves
             await addDoc(collection(db, "saves"), {
                 userId: auth.currentUser.uid,
                 type: 'post',
@@ -685,9 +570,7 @@ document.addEventListener('click', async (e) => {
                 image: btn.getAttribute('data-image'),
                 savedAt: serverTimestamp()
             });
-            
-            // ทำให้ปุ่มกลายเป็นสีชมพูเพื่อบอกว่าเซฟแล้ว
-            btn.style.color = '#ec4899'; 
+            btn.style.color = '#ec4899';
             alert("🔖 บันทึกโพสต์นี้ลงในคลังของคุณแล้ว!");
         } catch (error) {
             console.error("เซฟโพสต์ไม่สำเร็จ:", error);
@@ -695,141 +578,261 @@ document.addEventListener('click', async (e) => {
         }
     }
 });
+
 // ==========================================
 // 📊 ระบบสถิติชุมชน (ดึงข้อมูลจริงจากฐานข้อมูล)
 // ==========================================
 async function loadCommunityStats() {
     try {
-        // 1. นับจำนวนสมาชิกทั้งหมด
         const usersSnap = await getDocs(collection(db, "users"));
         const statUsers = document.getElementById('stat-total-users');
         if (statUsers) statUsers.innerText = usersSnap.size;
 
-        // 2. นับจำนวนโพสต์ทั้งหมดในระบบ
         const postsSnap = await getDocs(collection(db, "posts"));
         const statPosts = document.getElementById('stat-total-posts');
         if (statPosts) statPosts.innerText = postsSnap.size;
 
-        // 3. สุ่มตัวเลขคนออนไลน์ขำๆ (ให้ดูมีสีสัน)
         const statOnline = document.getElementById('stat-online-users');
-        if (statOnline) {
-            // สุ่มตัวเลขตั้งแต่ 1 ถึงจำนวนผู้ใช้ทั้งหมด
-            const randomOnline = Math.floor(Math.random() * usersSnap.size) + 1;
-            statOnline.innerText = randomOnline;
-        }
-
+        if (statOnline) statOnline.innerText = Math.floor(Math.random() * usersSnap.size) + 1;
     } catch (error) {
         console.error("โหลดสถิติชุมชนไม่สำเร็จ:", error);
     }
 }
 
-// สั่งให้โหลดสถิติทันทีที่มีการล็อกอิน (เอาคำสั่งนี้ไปวางต่อท้าย loadFeedPosts() ใน onAuthStateChanged ได้เลยครับ)
-// loadCommunityStats();
-// ==========================================
-// 🔖 ระบบบันทึกโพสต์ (Save Post)
-// ==========================================
-// ใช้ window. เพื่อให้ปุ่มใน HTML มองเห็นฟังก์ชันนี้ (เพราะไฟล์เราเป็น type="module")
 window.savePostToMyList = async (postId) => {
     if (!currentUserUid) return alert("กรุณาล็อกอินก่อนครับ!");
-    
     try {
-        // สร้างโฟลเดอร์ย่อยชื่อ "savedPosts" ในบัญชีของเรา แล้วโยนรหัสโพสต์เข้าไป
         await setDoc(doc(db, "users", currentUserUid, "savedPosts", postId), {
             savedAt: serverTimestamp()
         });
-        
         alert("🔖 บันทึกโพสต์นี้สำเร็จ! ไปดูได้ที่เมนู 'บันทึก' ครับ");
     } catch (error) {
         console.error("บันทึกโพสต์ขัดข้อง:", error);
         alert("อ๊ะ! บันทึกไม่ได้ ลองใหม่อีกครั้งนะครับ");
     }
 };
+
 // ==========================================
-// ✨ ระบบสร้างโพสต์ (Premium UI & Logic) ✨
+// ==========================================
+// ✨🚀 ระบบสร้างโพสต์อัจฉริยะ (Super Premium Engine) 🚀✨
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
-    // ดึง Element จากหน้าเว็บ
+    // 1. ดึง Elements โซน Modal
     const createModal = document.getElementById('create-post-modal');
     const closeCreateBtn = document.getElementById('close-create-btn');
+    const modalTitle = document.getElementById('modal-title');
+    const captionInput = document.getElementById('post-caption');
+    
+    // ดึง Elements โซนซ่อน/โชว์
+    const feelingZone = document.getElementById('feeling-zone');
+    const mediaUploadZone = document.getElementById('media-upload-zone');
+    const pollZone = document.getElementById('poll-zone');
+    
+    const postMediaUpload = document.getElementById('post-media-upload');
+    const uploadPlaceholder = document.getElementById('upload-placeholder');
+    const uploadIcon = document.getElementById('upload-icon');
+    const uploadText = document.getElementById('upload-text');
+    const imagePreview = document.getElementById('post-image-preview');
+    const videoPreview = document.getElementById('post-video-preview');
+    const feelingSelect = document.getElementById('feeling-select');
+    const sharePostBtn = document.getElementById('share-post-btn');
+
+    // 🌟 ดึง Elements ปุ่มกดจากหน้าฟีดหลัก (จุดที่หายไปรอบที่แล้ว!)
     const openModalInput = document.getElementById('open-modal-input');
     const triggerPostBtn = document.getElementById('trigger-post-btn');
     const btnAddImage = document.getElementById('btn-add-image');
     const btnAddVideo = document.getElementById('btn-add-video');
     const btnAddPoll = document.getElementById('btn-add-poll');
     const btnAddFeel = document.getElementById('btn-add-feel');
-    
-    const imageUploadInput = document.getElementById('post-image-upload');
-    const imagePreview = document.getElementById('post-image-preview');
-    const uploadPlaceholder = document.getElementById('upload-placeholder');
-    const captionInput = document.getElementById('post-caption');
 
-    // ฟังก์ชันเปิด Modal แบบมีแอนิเมชันเด้งดึ๋ง
-    const openPostModal = () => {
-        if(createModal) {
-            createModal.style.display = 'flex';
-            createModal.querySelector('div').style.animation = 'modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards';
-            captionInput.focus(); // เคอร์เซอร์ไปรอที่ช่องพิมพ์เลย
+    let postMediaBase64 = null;
+    let postMediaType = null; 
+
+    // 2. ฟังก์ชันรีเซ็ตกล่อง
+    const resetModalState = () => {
+        if(feelingZone) feelingZone.style.display = 'none';
+        if(mediaUploadZone) mediaUploadZone.style.display = 'none';
+        if(pollZone) pollZone.style.display = 'none';
+        if(imagePreview) imagePreview.style.display = 'none';
+        if(videoPreview) {
+            videoPreview.style.display = 'none';
+            videoPreview.pause();
+            videoPreview.src = '';
+        }
+        if(imagePreview) imagePreview.src = '';
+        if(uploadPlaceholder) uploadPlaceholder.style.display = 'flex';
+        if(postMediaUpload) postMediaUpload.value = '';
+        if(feelingSelect) feelingSelect.value = '';
+        postMediaBase64 = null;
+        postMediaType = null;
+        
+        const pollContainer = document.getElementById('poll-choices-container');
+        if (pollContainer) {
+            pollContainer.innerHTML = `
+                <input type="text" class="poll-choice" placeholder="ตัวเลือกที่ 1" style="width: 100%; background: #1a1a1a; color: white; border: 1px solid #262626; padding: 10px; border-radius: 5px; margin-bottom: 10px; outline: none; box-sizing: border-box; font-family: 'Kanit', sans-serif;">
+                <input type="text" class="poll-choice" placeholder="ตัวเลือกที่ 2" style="width: 100%; background: #1a1a1a; color: white; border: 1px solid #262626; padding: 10px; border-radius: 5px; margin-bottom: 10px; outline: none; box-sizing: border-box; font-family: 'Kanit', sans-serif;">
+            `;
         }
     };
 
-    // ฟังก์ชันปิด Modal
-    const closePostModal = () => {
+    // 3. ฟังก์ชันเปิด Modal พร้อมสลับโหมด
+    const openModal = (mode) => {
+        if(!createModal) return;
+        resetModalState();
+        
+        createModal.style.display = 'flex';
+        createModal.querySelector('div').style.animation = 'modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards';
+        setTimeout(() => { if(captionInput) captionInput.focus(); }, 100);
+
+        if (mode === 'text' && modalTitle) {
+            modalTitle.innerText = 'สร้างโพสต์ใหม่';
+        } else if (mode === 'image' && modalTitle) {
+            modalTitle.innerText = 'โพสต์รูปภาพ';
+            if(mediaUploadZone) mediaUploadZone.style.display = 'block';
+            if(postMediaUpload) postMediaUpload.accept = 'image/*';
+            if(uploadIcon) uploadIcon.innerText = '📸';
+            if(uploadText) uploadText.innerText = 'คลิกเพื่ออัปโหลดรูปภาพ';
+        } else if (mode === 'video' && modalTitle) {
+            modalTitle.innerText = 'โพสต์วิดีโอ';
+            if(mediaUploadZone) mediaUploadZone.style.display = 'block';
+            if(postMediaUpload) postMediaUpload.accept = 'video/*';
+            if(uploadIcon) uploadIcon.innerText = '🎥';
+            if(uploadText) uploadText.innerText = 'คลิกเพื่ออัปโหลดวิดีโอ';
+        } else if (mode === 'poll' && modalTitle) {
+            modalTitle.innerText = 'สร้างโพลสำรวจ';
+            if(pollZone) pollZone.style.display = 'block';
+        } else if (mode === 'feel' && modalTitle) {
+            modalTitle.innerText = 'แบ่งปันความรู้สึก';
+            if(feelingZone) feelingZone.style.display = 'block';
+        }
+    };
+
+    const closeModal = () => {
         if(createModal) {
             createModal.style.display = 'none';
-            // ล้างค่าเมื่อปิด
-            captionInput.value = '';
-            imageUploadInput.value = '';
-            imagePreview.style.display = 'none';
-            imagePreview.src = '';
-            uploadPlaceholder.style.display = 'block';
+            resetModalState();
+            if(captionInput) captionInput.value = ''; 
         }
     };
 
-    // --- ผูก Event เปิด/ปิด ---
-    if(openModalInput) openModalInput.addEventListener('click', openPostModal);
-    if(triggerPostBtn) triggerPostBtn.addEventListener('click', openPostModal);
-    if(closeCreateBtn) closeCreateBtn.addEventListener('click', closePostModal);
+    // --- 🌟 4. ผูก Event เปิด/ปิด ให้ปุ่มทำงานได้ (จุดที่แก้บั๊ก) ---
+    if(openModalInput) openModalInput.addEventListener('click', () => openModal('text'));
+    if(triggerPostBtn) triggerPostBtn.addEventListener('click', () => openModal('text'));
     
-    // กดพื้นที่สีดำเพื่อปิด
+    if(btnAddImage) btnAddImage.addEventListener('click', () => { openModal('image'); setTimeout(() => { if(postMediaUpload) postMediaUpload.click(); }, 300); });
+    if(btnAddVideo) btnAddVideo.addEventListener('click', () => { openModal('video'); setTimeout(() => { if(postMediaUpload) postMediaUpload.click(); }, 300); });
+    if(btnAddPoll) btnAddPoll.addEventListener('click', () => openModal('poll'));
+    if(btnAddFeel) btnAddFeel.addEventListener('click', () => openModal('feel'));
+
+    if(closeCreateBtn) closeCreateBtn.addEventListener('click', closeModal);
     window.addEventListener('click', (e) => {
-        if (e.target === createModal) closePostModal();
+        if (e.target === createModal) closeModal();
     });
 
-    // --- ฟีเจอร์: กดปุ่ม "รูปภาพ" แล้วให้เปิด Modal พร้อมหน้าต่างเลือกไฟล์ ---
-    if(btnAddImage) {
-        btnAddImage.addEventListener('click', () => {
-            openPostModal();
-            // หน่วงเวลานิดนึงให้ Modal เปิดก่อนค่อยเรียกหน้าต่างเลือกไฟล์
-            setTimeout(() => {
-                if(imageUploadInput) imageUploadInput.click();
-            }, 300);
+    // --- 5. ระบบเพิ่มตัวเลือกโพล ---
+    const addPollChoiceBtn = document.getElementById('add-poll-choice-btn');
+    const pollChoicesContainer = document.getElementById('poll-choices-container');
+    if(addPollChoiceBtn && pollChoicesContainer) {
+        addPollChoiceBtn.addEventListener('click', () => {
+            const currentChoices = pollChoicesContainer.querySelectorAll('.poll-choice').length;
+            if (currentChoices >= 5) return alert('เพิ่มตัวเลือกได้สูงสุด 5 อันนะครับเดฟ!');
+            const newChoice = document.createElement('input');
+            newChoice.type = 'text';
+            newChoice.className = 'poll-choice';
+            newChoice.placeholder = `ตัวเลือกที่ ${currentChoices + 1}`;
+            newChoice.style.cssText = 'width: 100%; background: #1a1a1a; color: white; border: 1px solid #262626; padding: 10px; border-radius: 5px; margin-bottom: 10px; outline: none; box-sizing: border-box; font-family: "Kanit", sans-serif;';
+            pollChoicesContainer.appendChild(newChoice);
         });
     }
 
-    // --- ฟีเจอร์: ปุ่มอื่นๆ (ทำเผื่ออนาคต) ---
-    const showComingSoon = (feature) => alert(`🚀 ฟีเจอร์ "${feature}" กำลังอยู่ในช่วงพัฒนา รออัปเดตแพทช์หน้านะครับ!`);
-    if(btnAddVideo) btnAddVideo.addEventListener('click', () => showComingSoon('วิดีโอ'));
-    if(btnAddPoll) btnAddPoll.addEventListener('click', () => showComingSoon('โพล'));
-    if(btnAddFeel) btnAddFeel.addEventListener('click', () => showComingSoon('ความรู้สึก'));
+    // --- 6. ระบบแปลงไฟล์วิดีโอและรูปภาพ ---
+    if(postMediaUpload) {
+        postMediaUpload.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
 
-    // --- ฟีเจอร์: พรีวิวรูปภาพก่อนโพสต์ ---
-    if(imageUploadInput) {
-        imageUploadInput.addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file) {
-                // เช็กขนาดไฟล์ไม่เกิน 1MB (1048576 bytes)
-                if(file.size > 1048576) {
-                    alert('ไฟล์ภาพใหญ่เกิน 1MB ครับคุณเดฟ! ลองรูปอื่นดูนะ');
-                    this.value = ''; // ล้างค่า
-                    return;
+            const isVideo = file.type.startsWith('video/');
+            const maxSize = isVideo ? 5242880 : 2097152; 
+            
+            if(file.size > maxSize) {
+                alert(`ไฟล์ใหญ่เกินไปครับคุณเดฟ! (สูงสุด ${isVideo ? '5MB' : '2MB'})`);
+                this.value = ''; 
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => {
+                postMediaBase64 = reader.result;
+                postMediaType = isVideo ? 'video' : 'image';
+                if(uploadPlaceholder) uploadPlaceholder.style.display = 'none';
+
+                if(isVideo) {
+                    if(videoPreview) { videoPreview.src = postMediaBase64; videoPreview.style.display = 'block'; }
+                    if(imagePreview) imagePreview.style.display = 'none';
+                } else {
+                    if(imagePreview) { imagePreview.src = postMediaBase64; imagePreview.style.display = 'block'; }
+                    if(videoPreview) videoPreview.style.display = 'none';
                 }
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    imagePreview.src = e.target.result;
-                    imagePreview.style.display = 'block';
-                    uploadPlaceholder.style.display = 'none';
-                };
-                reader.readAsDataURL(file);
+            };
+        });
+    }
+
+    // --- 7. พระเอกของเรา: ระบบส่งข้อมูลทุกอย่างขึ้น Firebase ---
+    if (sharePostBtn) {
+        sharePostBtn.addEventListener('click', async () => {
+            if (!currentUserUid) return alert("กรุณาล็อกอินก่อนครับ!");
+
+            const caption = captionInput ? captionInput.value.trim() : "";
+            const feeling = (feelingZone && feelingZone.style.display === 'block' && feelingSelect) ? feelingSelect.value : null;
+            
+            let pollData = null;
+            if (pollZone && pollZone.style.display === 'block') {
+                const choices = [];
+                document.querySelectorAll('.poll-choice').forEach(input => {
+                    if(input.value.trim() !== '') choices.push(input.value.trim());
+                });
+                if (choices.length > 0) {
+                    if (choices.length < 2) return alert("โพลต้องมีอย่างน้อย 2 ตัวเลือกนะครับ!");
+                    pollData = { choices: choices, votes: {} };
+                }
+            }
+
+            if (!caption && !postMediaBase64 && !pollData && !feeling) {
+                return alert("กรุณาพิมพ์ข้อความ เลือกรูป หรือสร้างโพลก่อนโพสต์ครับ! 🐈‍⬛");
+            }
+
+            try {
+                sharePostBtn.innerHTML = '🚀 กำลังส่งขึ้นกระสวย...';
+                sharePostBtn.disabled = true;
+                sharePostBtn.style.background = '#363636';
+
+                const postId = "post_" + Date.now().toString(); 
+                const newPostRef = doc(db, "posts", postId); 
+                
+                await setDoc(newPostRef, {
+                    uid: currentUserUid,
+                    caption: caption,
+                    feeling: feeling || null,
+                    mediaUrl: postMediaBase64 || null,
+                    mediaType: postMediaType || null,
+                    poll: pollData || null,
+                    likes: [],
+                    createdAt: new Date().toISOString()
+                });
+
+                alert("🎉 โพสต์สำเร็จแล้ว!");
+                
+                closeModal();
+                if (typeof loadFeedPosts === "function") loadFeedPosts(); 
+                
+            } catch (error) {
+                console.error("โพสต์ไม่สำเร็จ:", error);
+                alert("เกิดข้อผิดพลาดในการโพสต์ ลองใหม่อีกครั้งนะครับ");
+            } finally {
+                sharePostBtn.innerHTML = '🚀 โพสต์เลย!';
+                sharePostBtn.disabled = false;
+                sharePostBtn.style.background = 'linear-gradient(45deg, #ec4899, #8b5cf6)';
             }
         });
     }

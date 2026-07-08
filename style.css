@@ -3,7 +3,7 @@
 
 body {
     font-family: 'Kanit', sans-serif;
-    background-color: #0f172a; color: #fff; display: flex;
+    background: linear-gradient(135deg, #1e3a8a, #0f172a); color: #fff; display: flex;
     justify-content: center; align-items: center; height: 100vh;
     overflow: hidden; position: relative;
 }
